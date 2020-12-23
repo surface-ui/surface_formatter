@@ -33,9 +33,11 @@ defmodule Mix.Tasks.SurfaceFormat do
     if String.match?(input, @regex) do
       output =
         Regex.replace(@regex, input, fn match ->
-          match
-          |> String.slice(6..-3)
-          |> SurfaceFormatter.format_string!()
+          "~H\"\"\"#{
+            match
+            |> String.slice(6..-3)
+            |> SurfaceFormatter.format_string!()
+          }\"\"\""
         end)
 
       output = IO.iodata_to_binary([output, ?\n])
