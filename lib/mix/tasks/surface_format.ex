@@ -2,7 +2,10 @@ defmodule Mix.Tasks.SurfaceFormat do
   use Mix.Task
 
   @switches [
-    dot_formatter: :string
+    check_equivalent: :boolean,
+    check_formatted: :boolean,
+    dot_formatter: :string,
+    dry_run: :boolean
   ]
 
   @manifest "cached_dot_formatter"
@@ -23,8 +26,8 @@ defmodule Mix.Tasks.SurfaceFormat do
   end
 
   @regex ~r/~H""".*?"""/s
-  defp format_file({file, _formatter_opts}, _task_opts) do
-    {input, _extra_opts} = read_file(file)
+  defp format_file({file, formatter_opts}, _task_opts) do
+    {input, extra_opts} = read_file(file)
 
     if String.starts_with?(input, "defmodule SurfaceFormatter.Test") do
       IO.inspect(input)
@@ -42,7 +45,7 @@ defmodule Mix.Tasks.SurfaceFormat do
         end)
         # Run Elixir formatter to fix whitespace alignment in H sigil
         # for now instead of figuring out the proper way to do this.
-        |> Code.format_string!()
+        |> Code.format_string!(extra_opts ++ formatter_opts)
 
       output = IO.iodata_to_binary([output, ?\n])
       write_or_print(file, input, output)
