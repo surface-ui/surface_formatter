@@ -76,8 +76,15 @@ defmodule SurfaceFormatter do
   defp render_attribute({name, value, _meta}) when is_number(value),
     do: "#{name}=#{value}"
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}) when is_binary(expression),
-    do: "#{name}={{ #{Code.format_string!(expression)} }}"
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}) when is_binary(expression) do
+    formatted_expression =
+      "[#{expression}]"
+      |> Code.format_string!()
+      |> Enum.slice(1..-2)
+      |> to_string()
+
+    "#{name}={{ #{formatted_expression} }}"
+  end
 
   @spec render(code_segment) :: String.t() | nil
   defp render(segment, depth \\ 0)
