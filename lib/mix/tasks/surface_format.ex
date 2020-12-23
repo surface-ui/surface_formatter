@@ -29,10 +29,6 @@ defmodule Mix.Tasks.SurfaceFormat do
   defp format_file({file, formatter_opts}, _task_opts) do
     {input, extra_opts} = read_file(file)
 
-    if String.starts_with?(input, "defmodule SurfaceFormatter.Test") do
-      IO.inspect(input)
-    end
-
     if String.match?(input, @regex) do
       output =
         @regex

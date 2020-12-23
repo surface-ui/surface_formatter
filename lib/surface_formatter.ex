@@ -43,7 +43,24 @@ defmodule SurfaceFormatter do
   end
 
   defp code_segment(html) when is_binary(html) do
-    String.trim(html)
+    case String.trim(html) do
+      "" ->
+        # This string only contained whitespace, so make sure we format
+        # this as a newline as long as the string contains at least 2 newlines
+        newlines =
+          html
+          |> String.graphemes()
+          |> Enum.count(& &1 == "\n")
+
+        if newlines > 1 do
+          "\n"
+        else
+          ""
+        end
+
+      trimmed ->
+        trimmed
+    end
   end
 
   defp code_segment({"#" <> _macro_component = tag, attributes, [text_inside_macro_component], _meta}) do
@@ -89,8 +106,14 @@ defmodule SurfaceFormatter do
   @spec render(code_segment) :: String.t() | nil
   defp render(segment, depth \\ 0)
 
-  defp render(segment, _depth) when segment in ["", "\n"] do
+  defp render("", _depth) do
     nil
+  end
+
+  defp render("\n", _depth) do
+    # When this empty string is joined to surrounding code, it will end
+    # up putting a newline in between, retaining whitespace from the user.
+    ""
   end
 
   defp render(segment, depth) when is_binary(segment) do
@@ -119,7 +142,7 @@ defmodule SurfaceFormatter do
         [
           "<#{tag}",
           indented_attributes,
-          "#{indentation}#{if self_closing do " /" end}>"
+          "#{indentation}#{if self_closing do "/" end}>"
         ]
         |> List.flatten()
         |> Enum.join("\n")
@@ -130,16 +153,16 @@ defmodule SurfaceFormatter do
     rendered_children =
       children
       |> Enum.map(fn child ->
-        # I don't understand what's going on with this behavior regarding macro tags,
-        # but currently decreasing indentation depth by 3 seems to leave the child
-        # contents alone.
+        # I don't understand what's going on with this behavior regarding macro
+        # tags, but currently decreasing indentation depth by 3 seems to leave
+        # the child contents alone.
         child_indent_depth = depth + if is_macro_tag?(tag) do -3 else 1 end
         render(child, child_indent_depth)
       end)
       |> List.flatten()
       # Remove nils
       |> Enum.filter(&Function.identity/1)
-      |> Enum.join("\n\n")
+      |> Enum.join("\n")
 
     closing = "</#{tag}>"
 
