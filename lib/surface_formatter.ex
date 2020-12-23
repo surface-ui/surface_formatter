@@ -95,12 +95,22 @@ defmodule SurfaceFormatter do
 
   defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}) when is_binary(expression) do
     formatted_expression =
+      # Wrap it in square brackets (and then remove after formatting)
+      # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
+      # equivalent to `{{ [foo: "bar"] }}`
       "[#{expression}]"
       |> Code.format_string!()
       |> Enum.slice(1..-2)
       |> to_string()
 
-    "#{name}={{ #{formatted_expression} }}"
+    if String.contains?(formatted_expression, "\n") do
+      # Don't add extra space characters around the curly braces because
+      # the formatted elixir code has newlines in it; this helps indentation
+      # to line up.
+      "#{name}={{#{formatted_expression}}}"
+    else
+      "#{name}={{ #{formatted_expression} }}"
+    end
   end
 
   @spec render(code_segment) :: String.t() | nil
@@ -173,7 +183,20 @@ defmodule SurfaceFormatter do
     end
   end
 
-  defp indent(string, depth), do: "#{String.duplicate(@tab, depth)}#{string}"
+  defp indent(string, depth) do
+    indentation = String.duplicate(@tab, depth)
+
+    # This is pretty hacky, but it's an attempt to get
+    #   class={{
+    #     "foo",
+    #     @bar,
+    #     baz: true
+    #   }}
+    # to look right
+    string_with_newlines_indented = String.replace(string, "\n", "\n#{indentation}")
+
+    "#{indentation}#{string_with_newlines_indented}"
+  end
 
   defp is_macro_tag?("#" <> _), do: true
   defp is_macro_tag?(tag) when is_binary(tag), do: false
