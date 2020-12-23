@@ -32,13 +32,17 @@ defmodule Mix.Tasks.SurfaceFormat do
 
     if String.match?(input, @regex) do
       output =
-        Regex.replace(@regex, input, fn match ->
+        @regex
+        |> Regex.replace(input, fn match ->
           "~H\"\"\"#{
             match
             |> String.slice(6..-3)
             |> SurfaceFormatter.format_string!()
-          }\"\"\""
+          }\"\""
         end)
+        # Run Elixir formatter to fix whitespace alignment in H sigil
+        # for now instead of figuring out the proper way to do this.
+        |> Code.format_string!()
 
       output = IO.iodata_to_binary([output, ?\n])
       write_or_print(file, input, output)
