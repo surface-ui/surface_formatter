@@ -5,19 +5,19 @@ defmodule Mix.Tasks.SurfaceFormat do
   @type parsed_surface_node :: term
 
   @typedoc "An HTML/Surface tag"
-  @type tag :: String.t
+  @type tag :: String.t()
 
   @typedoc """
   An HTML/Surface attribute string, such as `class="container"`,
   `width=6`, or `items={{ @cart_items }}`
   """
-  @type attribute :: String.t
+  @type attribute :: String.t()
 
   @typedoc "Children of an HTML element"
   @type children :: list(code_segment)
 
   @typedoc "A segment of HTML that can be rendered given a tab level"
-  @type code_segment :: String.t | {tag, list(attribute), children}
+  @type code_segment :: String.t() | {tag, list(attribute), children}
 
   # Use 2 spaces for a tab
   @tab "  "
@@ -61,19 +61,20 @@ defmodule Mix.Tasks.SurfaceFormat do
   end
 
   defp code_segment({tag, attributes, children, _meta}) do
-    rendered_attributes = Enum.map(attributes, fn
-      {name, value, _meta} when is_binary(value) ->
-        "#{name}=\"#{String.trim(value)}\""
+    rendered_attributes =
+      Enum.map(attributes, fn
+        {name, value, _meta} when is_binary(value) ->
+          "#{name}=\"#{String.trim(value)}\""
 
-      {name, value, _meta} when is_boolean(value) ->
-        "#{name}=#{value}"
+        {name, value, _meta} when is_boolean(value) ->
+          "#{name}=#{value}"
 
-      {name, value, _meta} when is_number(value) ->
-        "#{name}=#{value}"
+        {name, value, _meta} when is_number(value) ->
+          "#{name}=#{value}"
 
-      {name, {:attribute_expr, expression, _expr_meta}, _meta} when is_binary(expression) ->
-        "#{name}={{ #{Code.format_string!(expression)} }}"
-    end)
+        {name, {:attribute_expr, expression, _expr_meta}, _meta} when is_binary(expression) ->
+          "#{name}={{ #{Code.format_string!(expression)} }}"
+      end)
 
     {
       tag,
@@ -82,8 +83,9 @@ defmodule Mix.Tasks.SurfaceFormat do
     }
   end
 
-  @spec render(code_segment) :: String.t | nil
+  @spec render(code_segment) :: String.t() | nil
   defp render(segment, depth \\ 0)
+
   defp render(segment, _depth) when segment in ["", "\n"] do
     nil
   end
@@ -95,10 +97,11 @@ defmodule Mix.Tasks.SurfaceFormat do
   defp render({tag, attributes, children}, depth) do
     indentation = String.duplicate(@tab, depth)
 
-    joined_attributes = case attributes do
-      [] -> ""
-      _ -> " " <> Enum.join(attributes, " ")
-    end
+    joined_attributes =
+      case attributes do
+        [] -> ""
+        _ -> " " <> Enum.join(attributes, " ")
+      end
 
     opening = "<" <> tag <> joined_attributes <> ">"
 
@@ -121,7 +124,7 @@ defmodule Mix.Tasks.SurfaceFormat do
 
     rendered_children =
       children
-      |> Enum.map(& render(&1, depth + 1))
+      |> Enum.map(&render(&1, depth + 1))
       |> List.flatten()
       # Remove nils
       |> Enum.filter(&Function.identity/1)
