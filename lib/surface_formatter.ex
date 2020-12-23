@@ -52,8 +52,13 @@ defmodule SurfaceFormatter do
         {name, value, _meta} when is_binary(value) ->
           "#{name}=\"#{String.trim(value)}\""
 
-        {name, value, _meta} when is_boolean(value) ->
-          "#{name}=#{value}"
+        {name, true, _meta} ->
+          # For `true` boolean attributes, simply including the name of the attribute
+          # without `=true` is shorthand for `=true`.
+          "#{name}"
+
+        {name, false, _meta} ->
+          "#{name}=false"
 
         {name, value, _meta} when is_number(value) ->
           "#{name}=#{value}"
@@ -81,6 +86,8 @@ defmodule SurfaceFormatter do
   end
 
   defp render({tag, attributes, children}, depth) do
+    self_closing = Enum.empty?(children)
+
     indentation = String.duplicate(@tab, depth)
 
     joined_attributes =
@@ -89,7 +96,7 @@ defmodule SurfaceFormatter do
         _ -> " " <> Enum.join(attributes, " ")
       end
 
-    opening = "<" <> tag <> joined_attributes <> ">"
+    opening = "<" <> tag <> joined_attributes <> "#{if self_closing do " /" end}>"
 
     opening =
       if String.length(opening) > @max_line_length do
@@ -100,7 +107,7 @@ defmodule SurfaceFormatter do
         [
           "<#{tag}",
           indented_attributes,
-          "#{indentation}>"
+          "#{indentation}#{if self_closing do " /" end}>"
         ]
         |> List.flatten()
         |> Enum.join("\n")
@@ -118,7 +125,11 @@ defmodule SurfaceFormatter do
 
     closing = "</#{tag}>"
 
-    "#{indentation}#{opening}\n#{rendered_children}\n#{indentation}#{closing}"
+    if self_closing do
+      "#{indentation}#{opening}"
+    else
+      "#{indentation}#{opening}\n#{rendered_children}\n#{indentation}#{closing}"
+    end
   end
 
   defp indent(string, depth), do: "#{String.duplicate(@tab, depth)}#{string}"
