@@ -46,33 +46,38 @@ defmodule SurfaceFormatter do
     String.trim(html)
   end
 
-  defp code_segment({tag, attributes, children, _meta}) do
-    rendered_attributes =
-      Enum.map(attributes, fn
-        {name, value, _meta} when is_binary(value) ->
-          "#{name}=\"#{String.trim(value)}\""
-
-        {name, true, _meta} ->
-          # For `true` boolean attributes, simply including the name of the attribute
-          # without `=true` is shorthand for `=true`.
-          "#{name}"
-
-        {name, false, _meta} ->
-          "#{name}=false"
-
-        {name, value, _meta} when is_number(value) ->
-          "#{name}=#{value}"
-
-        {name, {:attribute_expr, expression, _expr_meta}, _meta} when is_binary(expression) ->
-          "#{name}={{ #{Code.format_string!(expression)} }}"
-      end)
-
+  defp code_segment({"#" <> _macro_component = tag, attributes, [text_inside_macro_component], _meta}) do
     {
       tag,
-      rendered_attributes,
+      Enum.map(attributes, &render_attribute/1),
+      [text_inside_macro_component]
+    }
+  end
+
+  defp code_segment({tag, attributes, children, _meta}) do
+    {
+      tag,
+      Enum.map(attributes, &render_attribute/1),
       Enum.map(children, &code_segment/1)
     }
   end
+
+  defp render_attribute({name, value, _meta}) when is_binary(value),
+    do: "#{name}=\"#{String.trim(value)}\""
+
+  # For `true` boolean attributes, simply including the name of the attribute
+  # without `=true` is shorthand for `=true`.
+  defp render_attribute({name, true, _meta}),
+    do: "#{name}"
+
+  defp render_attribute({name, false, _meta}),
+    do: "#{name}=false"
+
+  defp render_attribute({name, value, _meta}) when is_number(value),
+    do: "#{name}=#{value}"
+
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}) when is_binary(expression),
+    do: "#{name}={{ #{Code.format_string!(expression)} }}"
 
   @spec render(code_segment) :: String.t() | nil
   defp render(segment, depth \\ 0)
@@ -117,7 +122,13 @@ defmodule SurfaceFormatter do
 
     rendered_children =
       children
-      |> Enum.map(&render(&1, depth + 1))
+      |> Enum.map(fn child ->
+        # I don't understand what's going on with this behavior regarding macro tags,
+        # but currently decreasing indentation depth by 3 seems to leave the child
+        # contents alone.
+        child_indent_depth = depth + if is_macro_tag?(tag) do -3 else 1 end
+        render(child, child_indent_depth)
+      end)
       |> List.flatten()
       # Remove nils
       |> Enum.filter(&Function.identity/1)
@@ -133,4 +144,7 @@ defmodule SurfaceFormatter do
   end
 
   defp indent(string, depth), do: "#{String.duplicate(@tab, depth)}#{string}"
+
+  defp is_macro_tag?("#" <> _), do: true
+  defp is_macro_tag?(tag) when is_binary(tag), do: false
 end
