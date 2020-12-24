@@ -2,7 +2,21 @@ defmodule SurfaceFormatterTest do
   use ExUnit.Case
   doctest SurfaceFormatter
 
-  test "greets the world" do
-    assert SurfaceFormatter.hello() == :world
+  test "lack of whitespace is preserved" do
+   actual =  SurfaceFormatter.format_string!("""
+    <div>
+    <dt>{{ @question }}</dt>
+    <dd><slot /></dd>
+    </div>
+    """)
+
+    expected = """
+    <div>
+      <dt>{{ @question }}</dt>
+      <dd><slot /></dd>
+    </div>
+    """
+
+    assert actual == expected
   end
 end
