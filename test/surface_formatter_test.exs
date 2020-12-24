@@ -19,4 +19,16 @@ defmodule SurfaceFormatterTest do
 
     assert actual == expected
   end
+
+  test "shorthand surface syntax is formatted by Elixir code formatter" do
+   actual =  SurfaceFormatter.format_string!("""
+    <div class={{ foo:        bar }}></div>
+    """)
+
+    expected = """
+    <div class={{ foo: bar }} />
+    """
+
+    assert actual == expected
+  end
 end
