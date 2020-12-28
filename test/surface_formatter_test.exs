@@ -2,6 +2,34 @@ defmodule SurfaceFormatterTest do
   use ExUnit.Case
   doctest SurfaceFormatter
 
+  test "children are indented 1 from parents" do
+   actual =  SurfaceFormatter.format_string!("""
+    <div>
+    <ul>
+    <li>
+    <a>
+    Hello
+    </a>
+    </li>
+    </ul>
+    </div>
+    """)
+
+    expected = """
+    <div>
+      <ul>
+        <li>
+          <a>
+            Hello
+          </a>
+        </li>
+      </ul>
+    </div>
+    """
+
+    assert actual == expected
+  end
+
   test "lack of whitespace is preserved" do
    actual =  SurfaceFormatter.format_string!("""
     <div>
