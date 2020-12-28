@@ -31,18 +31,30 @@ defmodule SurfaceFormatter do
     string
     |> Surface.Compiler.Parser.parse()
     |> elem(1)
-    |> Enum.map(&code_segment/1)
     |> Enum.map(&render/1)
     |> List.flatten()
     |> Enum.join("\n")
   end
 
-  @spec code_segment(parsed_surface_node) :: code_segment
-  defp code_segment({:interpolation, expression, _meta}) do
+  @spec render(parsed_surface_node) :: String.t() | nil
+  defp render(segment, depth \\ 0)
+
+  defp render({:interpolation, expression, _meta}, depth) do
     "{{ #{Code.format_string!(expression)} }}"
+    |> indent(depth)
   end
 
-  defp code_segment(html) when is_binary(html) do
+  defp render("", _depth) do
+    nil
+  end
+
+  defp render("\n", _depth) do
+    # When this empty string is joined to surrounding code, it will end
+    # up putting a newline in between, retaining whitespace from the user.
+    ""
+  end
+
+  defp render(html, depth) when is_binary(html) do
     case String.trim(html) do
       "" ->
         # This string only contained whitespace, so make sure we format
@@ -59,24 +71,69 @@ defmodule SurfaceFormatter do
         end
 
       trimmed ->
-        trimmed
+        # FIXME: I think this is a problem branch; when we trimmed above,
+        # we lost vital information about whether nodes were separated
+        # by whitespace or not.
+        indent(trimmed, depth)
     end
   end
 
-  defp code_segment({"#" <> _macro_component = tag, attributes, [text_inside_macro_component], _meta}) do
-    {
-      tag,
-      Enum.map(attributes, &render_attribute/1),
-      [text_inside_macro_component]
-    }
-  end
+  defp render({tag, attributes, children, _meta}, depth) do
+    self_closing = Enum.empty?(children)
+    indentation = String.duplicate(@tab, depth)
 
-  defp code_segment({tag, attributes, children, _meta}) do
-    {
-      tag,
-      Enum.map(attributes, &render_attribute/1),
-      Enum.map(children, &code_segment/1)
-    }
+    joined_attributes =
+      attributes
+      |> Enum.map(&render_attribute/1)
+      |> case do
+        [] ->
+          ""
+
+        rendered_attributes ->
+          # Prefix attributes string with a space (for after tag name)
+          " " <> Enum.join(rendered_attributes, " ")
+      end
+
+    opening = "<" <> tag <> joined_attributes <> "#{if self_closing do " /" end}>"
+
+    opening =
+      if String.length(opening) > @max_line_length do
+        indented_attributes =
+          attributes
+          |> Enum.map(&indent(&1, depth + 1))
+
+        [
+          "<#{tag}",
+          indented_attributes,
+          "#{indentation}#{if self_closing do "/" end}>"
+        ]
+        |> List.flatten()
+        |> Enum.join("\n")
+      else
+        opening
+      end
+
+    rendered_children = if is_macro_tag?(tag) do
+      [contents] = children
+      contents
+    else
+      children
+      |> Enum.map(fn child ->
+        render(child, depth + 1)
+      end)
+      |> List.flatten()
+      # Remove nils
+      |> Enum.filter(&Function.identity/1)
+      |> Enum.join()
+    end
+
+    closing = "</#{tag}>"
+
+    if self_closing do
+      "#{indentation}#{opening}"
+    else
+      "#{indentation}#{opening}\n#{rendered_children}\n#{indentation}#{closing}"
+    end
   end
 
   defp render_attribute({name, value, _meta}) when is_binary(value),
@@ -113,77 +170,10 @@ defmodule SurfaceFormatter do
     end
   end
 
-  @spec render(code_segment) :: String.t() | nil
-  defp render(segment, depth \\ 0)
-
-  defp render("", _depth) do
-    nil
-  end
-
-  defp render("\n", _depth) do
-    # When this empty string is joined to surrounding code, it will end
-    # up putting a newline in between, retaining whitespace from the user.
-    ""
-  end
-
-  defp render(segment, depth) when is_binary(segment) do
-    String.duplicate(@tab, depth) <> segment
-  end
-
-  defp render({tag, attributes, children}, depth) do
-    self_closing = Enum.empty?(children)
-
-    indentation = String.duplicate(@tab, depth)
-
-    joined_attributes =
-      case attributes do
-        [] -> ""
-        _ -> " " <> Enum.join(attributes, " ")
-      end
-
-    opening = "<" <> tag <> joined_attributes <> "#{if self_closing do " /" end}>"
-
-    opening =
-      if String.length(opening) > @max_line_length do
-        indented_attributes =
-          attributes
-          |> Enum.map(&indent(&1, depth + 1))
-
-        [
-          "<#{tag}",
-          indented_attributes,
-          "#{indentation}#{if self_closing do "/" end}>"
-        ]
-        |> List.flatten()
-        |> Enum.join("\n")
-      else
-        opening
-      end
-
-    rendered_children =
-      children
-      |> Enum.map(fn child ->
-        # I don't understand what's going on with this behavior regarding macro
-        # tags, but currently decreasing indentation depth by 3 seems to leave
-        # the child contents alone.
-        child_indent_depth = depth + if is_macro_tag?(tag) do -3 else 1 end
-        render(child, child_indent_depth)
-      end)
-      |> List.flatten()
-      # Remove nils
-      |> Enum.filter(&Function.identity/1)
-      |> Enum.join("\n")
-
-    closing = "</#{tag}>"
-
-    if self_closing do
-      "#{indentation}#{opening}"
-    else
-      "#{indentation}#{opening}\n#{rendered_children}\n#{indentation}#{closing}"
-    end
-  end
-
   defp indent(string, depth) do
+    # Ensure if they pass in a negative depth that we don't crash
+    depth = max(depth, 0)
+
     indentation = String.duplicate(@tab, depth)
 
     # This is pretty hacky, but it's an attempt to get
