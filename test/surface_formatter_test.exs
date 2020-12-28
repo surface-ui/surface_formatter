@@ -30,6 +30,23 @@ defmodule SurfaceFormatterTest do
     assert actual == expected
   end
 
+  test "Surface brackets for Elixir code still include the original code snippet" do
+   actual =  SurfaceFormatter.format_string!("""
+        <div :if = {{1 + 1      }}>
+    {{"hello "<>"dolly"}}
+    </div>
+    """)
+
+    expected = """
+
+    <div :if={{ 1 + 1 }}>
+      {{ "hello " <> "dolly" }}
+    </div>
+    """
+
+    assert actual == expected
+  end
+
   test "lack of whitespace is preserved" do
    actual =  SurfaceFormatter.format_string!("""
     <div>
