@@ -34,9 +34,14 @@ defmodule SurfaceFormatterTest do
   test "Surface brackets for Elixir code still include the original code snippet" do
     actual =
       SurfaceFormatter.format_string!("""
+
           <div :if = {{1 + 1      }}>
       {{"hello "<>"dolly"}}
       </div>
+
+
+
+
       """)
 
     expected = """
@@ -56,7 +61,7 @@ defmodule SurfaceFormatterTest do
       * Two
       ** Three
       *** Four
-      **** Five
+              **** Five
         -- Once I caught a fish alive
       </#MacroComponent>
       """)
@@ -67,7 +72,7 @@ defmodule SurfaceFormatterTest do
     * Two
     ** Three
     *** Four
-    **** Five
+            **** Five
       -- Once I caught a fish alive
     </#MacroComponent>
     """
@@ -79,14 +84,14 @@ defmodule SurfaceFormatterTest do
     actual =
       SurfaceFormatter.format_string!("""
       <div>
-      <dt>{{ @question }}</dt>
+      <dt>{{ @tldr }}/{{ @question }}</dt>
       <dd><slot /></dd>
       </div>
       """)
 
     expected = """
     <div>
-      <dt>{{ @question }}</dt>
+      <dt>{{ @tldr }}/{{ @question }}</dt>
       <dd><slot /></dd>
     </div>
     """

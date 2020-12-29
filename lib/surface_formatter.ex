@@ -20,14 +20,15 @@ defmodule SurfaceFormatter do
 
   def format_string!(string) do
     string
+    |> String.trim()
     |> Surface.Compiler.Parser.parse()
     |> elem(1)
-    # |> IO.inspect(label: "pre-analyzed")
-    # Always remove the trailing newline
-    |> Enum.map(&analyze_whitespace/1)
-    # |> IO.inspect(label: "analyzed")
+    |> Enum.flat_map(&parse_whitespace/1)
+    |> contextualize_whitespace()
     |> Enum.map(&render/1)
     |> List.flatten()
+    # Add final newline
+    |> Kernel.++(["\n"])
     |> Enum.join()
   end
 
@@ -37,7 +38,7 @@ defmodule SurfaceFormatter do
   # `spaces` is the whitespace before and after the node. Possible values
   # are `" "` and `""`. `" "` (a space character) means there is whitespace.
   # `""` (empty string) means there isn't.
-  defp analyze_whitespace(html) when is_binary(html) do
+  defp parse_whitespace(html) when is_binary(html) do
     trimmed_html = String.trim(html)
 
     if trimmed_html == "" do
@@ -50,81 +51,104 @@ defmodule SurfaceFormatter do
         |> String.graphemes()
         |> Enum.count(&(&1 == "\n"))
 
-      spaces =
-        case newlines do
-          0 -> ["", ""]
-          1 -> [" ", ""]
-          _ -> [" ", " "]
-        end
-
-      {:string, "", %{spaces: spaces}}
+      if newlines < 2 do
+        # There's just a bunch of spaces or at most one newline
+        [:whitespace]
+      else
+        # There are at least two newlines; collapse them down to two
+        [:whitespace, :whitespace]
+      end
     else
-      {:string, trimmed_html,
-       %{
-         spaces: [
-           if String.trim_leading(html) != html do
-             " "
-           else
-             ""
-           end,
-           if String.trim_trailing(html) != html do
-             " "
-           else
-             ""
-           end
-         ]
-       }}
+      trimmed_html_segments =
+        trimmed_html
+        # Collapse any string of whitespace that includes a newline down to only
+        # the newline
+        |> String.replace(~r/\s*\n\s*+/, "\n")
+        # Then split into separate logical nodes so the formatter can format
+        # the newlines appropriately.
+        |> String.split("\n", trim: true)
+        |> Enum.intersperse(:whitespace)
+
+      [
+        if String.trim_leading(html) != html do
+          :whitespace
+        end,
+        trimmed_html_segments,
+        if String.trim_trailing(html) != html do
+          :whitespace
+        end
+      ]
+      |> List.flatten()
+      # Remove nils
+      |> Enum.filter(&Function.identity/1)
     end
   end
 
-  # Don't modify contents of macro components
-  defp analyze_whitespace({"#" <> _macro_tag, _attributes, _children, _meta} = node) do
-    node
-  end
-
-  # Don't modify contents of <pre> or <code> tags
-  defp analyze_whitespace({tag, _attributes, _children, _meta} = node)
-       when tag in ["pre", "code"] do
-    node
-  end
-
-  defp analyze_whitespace({tag, attributes, children, meta}) do
-    analyzed_children = Enum.map(children, &analyze_whitespace/1)
-    {tag, attributes, analyzed_children, meta}
+  defp parse_whitespace({tag, attributes, children, meta} = node) do
+    if render_contents_verbatim?(tag) do
+      [node]
+    else
+      analyzed_children = Enum.flat_map(children, &parse_whitespace/1)
+      [{tag, attributes, analyzed_children, meta}]
+    end
   end
 
   # Not a string; do nothing
-  defp analyze_whitespace(node), do: node
+  defp parse_whitespace(node), do: [node]
+
+  defp contextualize_whitespace(nodes, accumulated \\ [])
+
+  defp contextualize_whitespace([:whitespace], accumulated) do
+    accumulated ++ [{:whitespace, :before_closing_tag}]
+  end
+
+  defp contextualize_whitespace([node], accumulated) do
+    accumulated ++ [contextualize_whitespace_for_single_node(node)]
+  end
+
+  defp contextualize_whitespace([:whitespace | rest], accumulated) do
+    contextualize_whitespace(
+      rest,
+      accumulated ++ [{:whitespace, :before_child}]
+    )
+  end
+
+  defp contextualize_whitespace([node | rest], accumulated) do
+    contextualize_whitespace(
+      rest,
+      accumulated ++ [contextualize_whitespace_for_single_node(node)]
+    )
+  end
+
+  defp contextualize_whitespace([], accumulated) do
+    accumulated
+  end
+
+  defp contextualize_whitespace_for_single_node({tag, attributes, children, meta}) do
+    {tag, attributes, contextualize_whitespace(children), meta}
+  end
+
+  defp contextualize_whitespace_for_single_node(node) do
+    node
+  end
 
   @spec render(parsed_surface_node) :: String.t() | nil
   defp render(segment, depth \\ 0)
 
-  defp render({:interpolation, expression, _meta} = a, depth) do
-    IO.inspect(a, label: "======== onter")
-    interpolation = "{{ #{Code.format_string!(expression)} }}"
-    indent(interpolation, depth)
+  defp render({:interpolation, expression, _meta}, _depth) do
+    "{{ #{Code.format_string!(expression)} }}"
   end
 
-  defp render({:string, html, meta}, depth) do
-    %{spaces: [whitespace_before, whitespace_after]} = meta
+  defp render({:whitespace, :before_child}, depth) do
+    "\n#{String.duplicate(@tab, depth)}"
+  end
 
-    "#{
-      if whitespace_before == " " do
-        "\n"
-      end
-    }#{
-      if whitespace_before == " " && html != "" do
-        indent(html, depth)
-      else
-        # Don't indent because there's no leading whitespace,
-        # so it's smushed up against the previous node
-        html
-      end
-    }#{
-      if whitespace_after == " " do
-        "\n"
-      end
-    }"
+  defp render({:whitespace, :before_closing_tag}, depth) do
+    "\n#{String.duplicate(@tab, max(depth - 1, 0))}"
+  end
+
+  defp render(html, _depth) when is_binary(html) do
+    html
   end
 
   defp render({tag, attributes, children, _meta}, depth) do
@@ -176,20 +200,20 @@ defmodule SurfaceFormatter do
       end
 
     rendered_children =
-      if is_macro_tag?(tag) do
+      if render_contents_verbatim?(tag) do
         [contents] = children
         contents
       else
-        Enum.map(children, &render(&1, depth + 1))
+        children
+        |> Enum.map(&render(&1, depth + 1))
       end
-      |> IO.inspect(label: "rendered_children")
 
     closing = "</#{tag}>"
 
     if self_closing do
-      "#{indentation}#{opening}"
+      "#{opening}"
     else
-      "#{indentation}#{opening}#{rendered_children}#{indentation}#{closing}"
+      "#{opening}#{rendered_children}#{closing}"
     end
   end
 
@@ -246,6 +270,9 @@ defmodule SurfaceFormatter do
     "#{indentation}#{string_with_newlines_indented}"
   end
 
-  defp is_macro_tag?("#" <> _), do: true
-  defp is_macro_tag?(tag) when is_binary(tag), do: false
+  # Don't modify contents of macro components or <pre> and <code> tags
+  defp render_contents_verbatim?("#" <> _), do: true
+  defp render_contents_verbatim?("pre"), do: true
+  defp render_contents_verbatim?("code"), do: true
+  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
 end
