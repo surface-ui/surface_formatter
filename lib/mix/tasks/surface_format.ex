@@ -1,4 +1,14 @@
 defmodule Mix.Tasks.SurfaceFormat do
+  @shortdoc "Formats Surface H-sigils in the given files/patterns"
+
+  @moduledoc """
+  Formats Surface H-sigils in the given files and patterns.
+
+      mix surface_format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+
+  Takes the same options as `mix format`.
+  """
+
   use Mix.Task
 
   @switches [
