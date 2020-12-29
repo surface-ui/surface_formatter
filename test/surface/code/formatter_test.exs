@@ -12,20 +12,20 @@ defmodule Surface.Code.FormatterTest do
       """
 
       assert [
-        {"div", [],
-         [
-           {:whitespace, :before_child},
-           {"p", [],
-            [
-              {:whitespace, :before_child},
-              "Hello",
-              {:whitespace, :before_child},
-              "Goodbye",
-              {:whitespace, :before_closing_tag}
-            ], _},
-           {:whitespace, :before_closing_tag}
-         ], _}
-      ] = Surface.Code.Formatter.parse(surface_code)
+               {"div", [],
+                [
+                  {:whitespace, :before_child},
+                  {"p", [],
+                   [
+                     {:whitespace, :before_child},
+                     "Hello",
+                     {:whitespace, :before_child},
+                     "Goodbye",
+                     {:whitespace, :before_closing_tag}
+                   ], _},
+                  {:whitespace, :before_closing_tag}
+                ], _}
+             ] = Surface.Code.Formatter.parse(surface_code)
     end
   end
 end

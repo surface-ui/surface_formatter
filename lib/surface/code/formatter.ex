@@ -55,7 +55,7 @@ defmodule Surface.Code.Formatter do
   @spec format(list(formatter_node), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
     nodes
-    |> Enum.map(& render(&1, opts))
+    |> Enum.map(&render(&1, opts))
     |> List.flatten()
     # Add final newline
     |> Kernel.++(["\n"])
@@ -247,7 +247,8 @@ defmodule Surface.Code.Formatter do
 
     # Maybe split opening tag onto multiple lines depending on line length
     opening =
-      if String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
+      if length(attributes) > 1 &&
+           String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
         indented_attributes = Enum.map(rendered_attributes, &indent(&1, depth + 1))
 
         [
@@ -302,11 +303,19 @@ defmodule Surface.Code.Formatter do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
+    wrapped_formatted_expression = Code.format_string!("[#{expression}]")
+    ["[", next_segment | _rest] = wrapped_formatted_expression
+
     formatted_expression =
-      "[#{expression}]"
-      |> Code.format_string!()
-      |> Enum.slice(1..-2)
+      if String.trim(next_segment) == "" do
+        Enum.slice(wrapped_formatted_expression, 2..-3)
+      else
+        Enum.slice(wrapped_formatted_expression, 1..-2)
+      end
       |> to_string()
+      # If the Elixir formatter broke this into multiple lines, then wrapping it
+      # in an extra list above caused an extra level of indentation. Remove it.
+      |> String.replace("\n  ", "\n")
 
     "[#{formatted_expression}]"
     |> Code.string_to_quoted!()

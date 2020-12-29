@@ -141,15 +141,55 @@ defmodule Surface.CodeTest do
 
     test_formatter(ninety_seven_chars, ninety_seven_chars)
 
-    test_formatter("""
-    <Component foo="..........." bar="..............." baz="............" qux="...................." />
-    """, """
-    <Component
-      foo="..........."
-      bar="..............."
-      baz="............"
-      qux="...................."
-    />
-    """)
+    test_formatter(
+      """
+      <Component foo="..........." bar="..............." baz="............" qux="...................." />
+      """,
+      """
+      <Component
+        foo="..........."
+        bar="..............."
+        baz="............"
+        qux="...................."
+      />
+      """
+    )
+  end
+
+  test "a single attribute always begins on the same line as the opening tag" do
+    test_formatter(
+      """
+      <Foo bio={{%{age: 23, name: "John Jacob Jingleheimerschmidt", title: "Lead rockstar 10x ninja brogrammer", reports_to: "James Jacob Jingleheimerschmidt"}}}/>
+      """,
+      """
+      <Foo bio={{%{
+        age: 23,
+        name: "John Jacob Jingleheimerschmidt",
+        title: "Lead rockstar 10x ninja brogrammer",
+        reports_to: "James Jacob Jingleheimerschmidt"
+      }}} />
+      """
+    )
+
+    test_formatter(
+      """
+      <Foo urls={{["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}}/>
+      """,
+      """
+      <Foo urls={{[
+        "https://hexdocs.pm/elixir/DateTime.html#content",
+        "https://hexdocs.pm/elixir/Exception.html#content"
+      ]}} />
+      """
+    )
+
+    test_formatter(
+      """
+      <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
+      """,
+      """
+      <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
+      """
+    )
   end
 end
