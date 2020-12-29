@@ -12,9 +12,9 @@ defmodule Surface.Code do
     - Lack of whitespace is preserved, so that intended behaviors are not removed.
       (For example, `<span>Foo bar baz</span>` will not have newlines or spaces added.)
   """
-  def format_string!(string) do
+  def format_string!(string, opts \\ []) do
     string
     |> Surface.Code.Formatter.parse()
-    |> Surface.Code.Formatter.format()
+    |> Surface.Code.Formatter.format(opts)
   end
 end

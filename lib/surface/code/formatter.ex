@@ -7,7 +7,7 @@ defmodule Surface.Code.Formatter do
   @tab "  "
 
   # Line length of opening tags before splitting attributes onto their own line
-  @max_line_length 80
+  @default_line_length 98
 
   @typedoc """
   The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
@@ -35,6 +35,8 @@ defmodule Surface.Code.Formatter do
   """
   @type formatter_node :: surface_node | {:whitespace, whitespace_context}
 
+  @type option :: {:line_length, integer}
+
   @doc """
   Given a string of H-sigil code, return a list of surface nodes including special
   whitespace nodes that enable formatting.
@@ -50,10 +52,10 @@ defmodule Surface.Code.Formatter do
   end
 
   @doc "Given a list of surface nodes, return a formatted string of H-sigil code"
-  @spec format(list(formatter_node)) :: String.t()
-  def format(nodes) do
+  @spec format(list(formatter_node), list(option)) :: String.t()
+  def format(nodes, opts \\ []) do
     nodes
-    |> Enum.map(&render/1)
+    |> Enum.map(& render(&1, opts))
     |> List.flatten()
     # Add final newline
     |> Kernel.++(["\n"])
@@ -190,32 +192,32 @@ defmodule Surface.Code.Formatter do
   end
 
   # Take a formatter_node and return a formatted string
-  @spec render(formatter_node) :: String.t() | nil
-  defp render(segment, depth \\ 0)
+  @spec render(formatter_node, list(option)) :: String.t() | nil
+  defp render(segment, opts, depth \\ 0)
 
-  defp render({:interpolation, expression, _meta}, _depth) do
-    "{{ #{Code.format_string!(expression)} }}"
+  defp render({:interpolation, expression, _meta}, opts, _depth) do
+    "{{ #{Code.format_string!(expression, opts)} }}"
   end
 
-  defp render({:whitespace, :before_whitespace}, _depth) do
+  defp render({:whitespace, :before_whitespace}, _opts, _depth) do
     # There are multiple newlines in a row; don't add spaces
     # if there aren't going to be other characters after it
     "\n"
   end
 
-  defp render({:whitespace, :before_child}, depth) do
+  defp render({:whitespace, :before_child}, _opts, depth) do
     "\n#{String.duplicate(@tab, depth)}"
   end
 
-  defp render({:whitespace, :before_closing_tag}, depth) do
+  defp render({:whitespace, :before_closing_tag}, _opts, depth) do
     "\n#{String.duplicate(@tab, max(depth - 1, 0))}"
   end
 
-  defp render(html, _depth) when is_binary(html) do
+  defp render(html, _opts, _depth) when is_binary(html) do
     html
   end
 
-  defp render({tag, attributes, children, _meta}, depth) do
+  defp render({tag, attributes, children, _meta}, opts, depth) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, depth)
 
@@ -245,7 +247,7 @@ defmodule Surface.Code.Formatter do
 
     # Maybe split opening tag onto multiple lines depending on line length
     opening =
-      if String.length(opening) > @max_line_length do
+      if String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
         indented_attributes = Enum.map(rendered_attributes, &indent(&1, depth + 1))
 
         [
@@ -269,7 +271,7 @@ defmodule Surface.Code.Formatter do
         contents
       else
         children
-        |> Enum.map(&render(&1, depth + 1))
+        |> Enum.map(&render(&1, opts, depth + 1))
       end
 
     closing = "</#{tag}>"

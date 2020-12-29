@@ -107,12 +107,7 @@ defmodule Surface.CodeTest do
       int_prop={{12345}} str_prop={{ "some_string_value" }} />
       """,
       """
-      <Component
-        true_prop
-        false_prop=false
-        int_prop=12345
-        str_prop="some_string_value"
-      />
+      <Component true_prop false_prop=false int_prop=12345 str_prop="some_string_value" />
       """
     )
   end
@@ -137,5 +132,24 @@ defmodule Surface.CodeTest do
       <Component int_prop=1_000_000_000 float_prop={{ 123_456_789.123456789 }} />
       """
     )
+  end
+
+  test "attributes wrap at 98 characters by default" do
+    ninety_seven_chars = """
+    <Component foo="..........." bar="..............." baz="............" qux="..................." />
+    """
+
+    test_formatter(ninety_seven_chars, ninety_seven_chars)
+
+    test_formatter("""
+    <Component foo="..........." bar="..............." baz="............" qux="...................." />
+    """, """
+    <Component
+      foo="..........."
+      bar="..............."
+      baz="............"
+      qux="...................."
+    />
+    """)
   end
 end
