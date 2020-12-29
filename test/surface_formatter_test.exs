@@ -3,17 +3,18 @@ defmodule SurfaceFormatterTest do
   doctest SurfaceFormatter
 
   test "children are indented 1 from parents" do
-    actual =  SurfaceFormatter.format_string!("""
-    <div>
-    <ul>
-    <li>
-    <a>
-    Hello
-    </a>
-    </li>
-    </ul>
-    </div>
-    """)
+    actual =
+      SurfaceFormatter.format_string!("""
+      <div>
+      <ul>
+      <li>
+      <a>
+      Hello
+      </a>
+      </li>
+      </ul>
+      </div>
+      """)
 
     expected = """
     <div>
@@ -31,14 +32,14 @@ defmodule SurfaceFormatterTest do
   end
 
   test "Surface brackets for Elixir code still include the original code snippet" do
-    actual =  SurfaceFormatter.format_string!("""
-        <div :if = {{1 + 1      }}>
-    {{"hello "<>"dolly"}}
-    </div>
-    """)
+    actual =
+      SurfaceFormatter.format_string!("""
+          <div :if = {{1 + 1      }}>
+      {{"hello "<>"dolly"}}
+      </div>
+      """)
 
     expected = """
-
     <div :if={{ 1 + 1 }}>
       {{ "hello " <> "dolly" }}
     </div>
@@ -48,41 +49,40 @@ defmodule SurfaceFormatterTest do
   end
 
   test "Contents of Macro Components are preserved" do
-    actual =  SurfaceFormatter.format_string!("""
-    <#MacroComponent>
-    * One
-    * Two
-    ** Three
-    *** Four
-    **** Five
-      -- Once I caught a fish alive
-    </#MacroComponent>
-    """)
+    actual =
+      SurfaceFormatter.format_string!("""
+      <#MacroComponent>
+      * One
+      * Two
+      ** Three
+      *** Four
+      **** Five
+        -- Once I caught a fish alive
+      </#MacroComponent>
+      """)
 
     expected = """
     <#MacroComponent>
-
     * One
     * Two
     ** Three
     *** Four
     **** Five
       -- Once I caught a fish alive
-
     </#MacroComponent>
     """
 
     assert actual == expected
   end
 
-  @tag :skip
   test "lack of whitespace is preserved" do
-   actual =  SurfaceFormatter.format_string!("""
-    <div>
-    <dt>{{ @question }}</dt>
-    <dd><slot /></dd>
-    </div>
-    """)
+    actual =
+      SurfaceFormatter.format_string!("""
+      <div>
+      <dt>{{ @question }}</dt>
+      <dd><slot /></dd>
+      </div>
+      """)
 
     expected = """
     <div>
@@ -95,9 +95,10 @@ defmodule SurfaceFormatterTest do
   end
 
   test "shorthand surface syntax is formatted by Elixir code formatter" do
-   actual =  SurfaceFormatter.format_string!("""
-    <div class={{ foo:        bar }}></div>
-    """)
+    actual =
+      SurfaceFormatter.format_string!("""
+      <div class={{ foo:        bar }}></div>
+      """)
 
     expected = """
     <div class={{ foo: bar }} />
