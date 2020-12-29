@@ -46,7 +46,7 @@ defmodule Mix.Tasks.SurfaceFormat do
           "~H\"\"\"\n#{
             match
             |> String.slice(6..-4)
-            |> SurfaceFormatter.format_string!()
+            |> Surface.Formatter.format_string!()
           }\"\"\""
         end)
         # Run Elixir formatter to fix whitespace alignment in H sigil
