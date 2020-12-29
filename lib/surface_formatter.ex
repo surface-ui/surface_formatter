@@ -9,20 +9,23 @@ defmodule SurfaceFormatter do
   # Line length of opening tags before splitting attributes onto their own line
   @max_line_length 80
 
-  @type tag :: String.t
+  @type tag :: String.t()
   @type attribute :: term
 
   @typedoc "A node output by &Surface.Compiler.Parser.parse/1"
-  @type parsed_surface_node :: String.t | {:interpolation, String.t, map} | {tag, list(attribute), list(parsed_surface_node), map}
+  @type parsed_surface_node ::
+          String.t()
+          | {:interpolation, String.t(), map}
+          | {tag, list(attribute), list(parsed_surface_node), map}
 
   def format_string!(string) do
     string
     |> Surface.Compiler.Parser.parse()
     |> elem(1)
-    #|> IO.inspect(label: "pre-analyzed")
+    # |> IO.inspect(label: "pre-analyzed")
     # Always remove the trailing newline
     |> Enum.map(&analyze_whitespace/1)
-    #|> IO.inspect(label: "analyzed")
+    # |> IO.inspect(label: "analyzed")
     |> Enum.map(&render/1)
     |> List.flatten()
     |> Enum.join()
@@ -56,12 +59,21 @@ defmodule SurfaceFormatter do
 
       {:string, "", %{spaces: spaces}}
     else
-      {:string, trimmed_html, %{
-        spaces: [
-          if String.trim_leading(html) != html do " " else "" end,
-          if String.trim_trailing(html) != html do " " else "" end
-        ]
-      }}
+      {:string, trimmed_html,
+       %{
+         spaces: [
+           if String.trim_leading(html) != html do
+             " "
+           else
+             ""
+           end,
+           if String.trim_trailing(html) != html do
+             " "
+           else
+             ""
+           end
+         ]
+       }}
     end
   end
 
@@ -71,7 +83,8 @@ defmodule SurfaceFormatter do
   end
 
   # Don't modify contents of <pre> or <code> tags
-  defp analyze_whitespace({tag, _attributes, _children, _meta} = node) when tag in ["pre", "code"] do
+  defp analyze_whitespace({tag, _attributes, _children, _meta} = node)
+       when tag in ["pre", "code"] do
     node
   end
 
@@ -96,7 +109,9 @@ defmodule SurfaceFormatter do
     %{spaces: [whitespace_before, whitespace_after]} = meta
 
     "#{
-      if whitespace_before == " " do "\n" end
+      if whitespace_before == " " do
+        "\n"
+      end
     }#{
       if whitespace_before == " " && html != "" do
         indent(html, depth)
@@ -106,7 +121,9 @@ defmodule SurfaceFormatter do
         html
       end
     }#{
-      if whitespace_after == " " do "\n" end
+      if whitespace_after == " " do
+        "\n"
+      end
     }"
   end
 
@@ -158,12 +175,12 @@ defmodule SurfaceFormatter do
         opening
       end
 
-   rendered_children =
+    rendered_children =
       if is_macro_tag?(tag) do
         [contents] = children
         contents
       else
-        Enum.map(children, & render(&1, depth + 1))
+        Enum.map(children, &render(&1, depth + 1))
       end
       |> IO.inspect(label: "rendered_children")
 
@@ -172,17 +189,7 @@ defmodule SurfaceFormatter do
     if self_closing do
       "#{indentation}#{opening}"
     else
-      "#{
-        indentation
-      }#{
-        opening
-      }#{
-        rendered_children
-      }#{
-        indentation
-      }#{
-        closing
-      }"
+      "#{indentation}#{opening}#{rendered_children}#{indentation}#{closing}"
     end
   end
 
