@@ -169,10 +169,12 @@ defmodule SurfaceFormatter do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, depth)
 
-    joined_attributes =
+    rendered_attributes =
       attributes
       |> Enum.map(&render_attribute/1)
-      |> case do
+
+    joined_attributes =
+      case rendered_attributes do
         [] ->
           ""
 
@@ -194,9 +196,7 @@ defmodule SurfaceFormatter do
     # Maybe split opening tag onto multiple lines depending on line length
     opening =
       if String.length(opening) > @max_line_length do
-        indented_attributes =
-          attributes
-          |> Enum.map(&indent(&1, depth + 1))
+        indented_attributes = Enum.map(rendered_attributes, &indent(&1, depth + 1))
 
         [
           "<#{tag}",
