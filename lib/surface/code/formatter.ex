@@ -1,4 +1,4 @@
-defmodule Surface.Formatter do
+defmodule Surface.Code.Formatter do
   @moduledoc """
   Houses code to format Surface code snippets. (In the form of strings.)
   """
@@ -9,22 +9,50 @@ defmodule Surface.Formatter do
   # Line length of opening tags before splitting attributes onto their own line
   @max_line_length 80
 
+  @typedoc """
+  The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
+  """
   @type tag :: String.t()
+
   @type attribute :: term
 
-  @typedoc "A node output by &Surface.Compiler.Parser.parse/1"
-  @type parsed_surface_node ::
+  @typedoc "A node output by `&Surface.Compiler.Parser.parse/1`"
+  @type surface_node ::
           String.t()
           | {:interpolation, String.t(), map}
-          | {tag, list(attribute), list(parsed_surface_node), map}
+          | {tag, list(attribute), list(surface_node), map}
 
-  def format_string!(string) do
+  @typedoc """
+  Context of a section of whitespace. This allows the formatter to decide things
+  such as how much indentation to provide after a newline.
+  """
+  @type whitespace_context :: :before_child | :before_closing_tag | :before_whitespace
+
+  @typedoc """
+  A node output by `&Surface.Code.Formatter.parse/1`.
+  Simply a transformation of the output of `&Surface.Compiler.Parser.parse/1`,
+  with contextualized whitespace nodes parsed out of the string nodes.
+  """
+  @type formatter_node :: surface_node | {:whitespace, whitespace_context}
+
+  @doc """
+  Given a string of H-sigil code, return a list of surface nodes including special
+  whitespace nodes that enable formatting.
+  """
+  @spec parse(String.t()) :: list(formatter_node)
+  def parse(string) do
     string
     |> String.trim()
     |> Surface.Compiler.Parser.parse()
     |> elem(1)
     |> Enum.flat_map(&parse_whitespace/1)
     |> contextualize_whitespace()
+  end
+
+  @doc "Given a list of surface nodes, return a formatted string of H-sigil code"
+  @spec format(list(formatter_node)) :: String.t()
+  def format(nodes) do
+    nodes
     |> Enum.map(&render/1)
     |> List.flatten()
     # Add final newline
@@ -32,13 +60,16 @@ defmodule Surface.Formatter do
     |> Enum.join()
   end
 
-  # Deeply traverse parsed Surface nodes, converting string nodes
-  # into this format: `{:string, String.t, %{spaces: [String.t, String.t]}}`
-  #
-  # `spaces` is the whitespace before and after the node. Possible values
-  # are `" "` and `""`. `" "` (a space character) means there is whitespace.
-  # `""` (empty string) means there isn't.
-  defp parse_whitespace(html) when is_binary(html) do
+  @doc """
+  Deeply traverse parsed Surface nodes, converting string nodes
+  into this format: `{:string, String.t, %{spaces: [String.t, String.t]}}`
+
+  `spaces` is the whitespace before and after the node. Possible values
+  are `" "` and `""`. `" "` (a space character) means there is whitespace.
+  `""` (empty string) means there isn't.
+  """
+  @spec parse_whitespace(surface_node) :: list(surface_node | :whitespace)
+  def parse_whitespace(html) when is_binary(html) do
     trimmed_html = String.trim(html)
 
     if trimmed_html == "" do
@@ -84,7 +115,7 @@ defmodule Surface.Formatter do
     end
   end
 
-  defp parse_whitespace({tag, attributes, children, meta} = node) do
+  def parse_whitespace({tag, attributes, children, meta} = node) do
     if render_contents_verbatim?(tag) do
       [node]
     else
@@ -109,8 +140,9 @@ defmodule Surface.Formatter do
   end
 
   # Not a string; do nothing
-  defp parse_whitespace(node), do: [node]
+  def parse_whitespace(node), do: [node]
 
+  @spec contextualize_whitespace(list(surface_node | :whitespace)) :: list(formatter_node)
   defp contextualize_whitespace(nodes, accumulated \\ [])
 
   defp contextualize_whitespace([:whitespace], accumulated) do
@@ -147,6 +179,8 @@ defmodule Surface.Formatter do
     accumulated
   end
 
+  # This function allows us to operate deeply on nested children through recursion
+  @spec contextualize_whitespace_for_single_node(surface_node) :: surface_node
   defp contextualize_whitespace_for_single_node({tag, attributes, children, meta}) do
     {tag, attributes, contextualize_whitespace(children), meta}
   end
@@ -155,7 +189,8 @@ defmodule Surface.Formatter do
     node
   end
 
-  @spec render(parsed_surface_node) :: String.t() | nil
+  # Take a formatter_node and return a formatted string
+  @spec render(formatter_node) :: String.t() | nil
   defp render(segment, depth \\ 0)
 
   defp render({:interpolation, expression, _meta}, _depth) do
@@ -257,10 +292,10 @@ defmodule Surface.Formatter do
   defp render_attribute({name, false, _meta}),
     do: "#{name}=false"
 
-  defp render_attribute({name, value, _meta}) when is_number(value),
-    do: "#{name}=#{value}"
+  defp render_attribute({name, value, _meta}) when is_integer(value),
+    do: "#{name}=#{Code.format_string!("#{value}")}"
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta})
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
@@ -271,13 +306,23 @@ defmodule Surface.Formatter do
       |> Enum.slice(1..-2)
       |> to_string()
 
-    if String.contains?(formatted_expression, "\n") do
-      # Don't add extra space characters around the curly braces because
-      # the formatted elixir code has newlines in it; this helps indentation
-      # to line up.
-      "#{name}={{#{formatted_expression}}}"
-    else
-      "#{name}={{ #{formatted_expression} }}"
+    "[#{formatted_expression}]"
+    |> Code.string_to_quoted!()
+    |> case do
+      [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
+        # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
+        # so render it without the brackets
+        render_attribute({name, literal, meta})
+
+      _ ->
+        if String.contains?(formatted_expression, "\n") do
+          # Don't add extra space characters around the curly braces because
+          # the formatted elixir code has newlines in it; this helps indentation
+          # to line up.
+          "#{name}={{#{formatted_expression}}}"
+        else
+          "#{name}={{ #{formatted_expression} }}"
+        end
     end
   end
 
@@ -299,9 +344,31 @@ defmodule Surface.Formatter do
     "#{indentation}#{string_with_newlines_indented}"
   end
 
-  # Don't modify contents of macro components or <pre> and <code> tags
-  defp render_contents_verbatim?("#" <> _), do: true
-  defp render_contents_verbatim?("pre"), do: true
-  defp render_contents_verbatim?("code"), do: true
-  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
+  @doc """
+  Don't modify contents of macro components or <pre> and <code> tags
+
+  ### Examples
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("div")
+      false
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("p")
+      false
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("pre")
+      true
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("code")
+      true
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("#Markdown")
+      true
+
+      iex> Surface.Code.Formatter.render_contents_verbatim?("#CustomMacroComponent")
+      true
+  """
+  def render_contents_verbatim?("#" <> _), do: true
+  def render_contents_verbatim?("pre"), do: true
+  def render_contents_verbatim?("code"), do: true
+  def render_contents_verbatim?(tag) when is_binary(tag), do: false
 end
