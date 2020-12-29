@@ -89,6 +89,19 @@ defmodule SurfaceFormatter do
       [node]
     else
       analyzed_children = Enum.flat_map(children, &parse_whitespace/1)
+
+      # Prevent empty line at beginning of children
+      analyzed_children = case analyzed_children do
+        [:whitespace, :whitespace | rest] -> [:whitespace | rest]
+        _ -> analyzed_children
+      end
+
+      # Prevent empty line at end of children
+      analyzed_children = case Enum.slice(analyzed_children, -2..-1) do
+        [:whitespace, :whitespace] -> Enum.slice(analyzed_children, 0..-2)
+        _ -> analyzed_children
+      end
+
       [{tag, attributes, analyzed_children, meta}]
     end
   end
