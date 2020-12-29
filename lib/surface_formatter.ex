@@ -106,6 +106,14 @@ defmodule SurfaceFormatter do
     accumulated ++ [contextualize_whitespace_for_single_node(node)]
   end
 
+  defp contextualize_whitespace([:whitespace, :whitespace | rest], accumulated) do
+    # 2 newlines in a row
+    contextualize_whitespace(
+      [:whitespace | rest],
+      accumulated ++ [{:whitespace, :before_whitespace}]
+    )
+  end
+
   defp contextualize_whitespace([:whitespace | rest], accumulated) do
     contextualize_whitespace(
       rest,
@@ -137,6 +145,12 @@ defmodule SurfaceFormatter do
 
   defp render({:interpolation, expression, _meta}, _depth) do
     "{{ #{Code.format_string!(expression)} }}"
+  end
+
+  defp render({:whitespace, :before_whitespace}, _depth) do
+    # There are multiple newlines in a row; don't add spaces
+    # if there aren't going to be other characters after it
+    "\n"
   end
 
   defp render({:whitespace, :before_child}, depth) do
