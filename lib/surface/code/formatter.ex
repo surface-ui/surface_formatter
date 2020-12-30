@@ -312,17 +312,18 @@ defmodule Surface.Code.Formatter do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
-    value = case Code.string_to_quoted!("[#{expression}]") do
-      [value] ->
-        if Keyword.keyword?([value]) do
-          [value]
-        else
-          value
-        end
+    value =
+      case Code.string_to_quoted!("[#{expression}]") do
+        [value] ->
+          if Keyword.keyword?([value]) do
+            [value]
+          else
+            value
+          end
 
-      keyword_list ->
-        keyword_list
-    end
+        keyword_list ->
+          keyword_list
+      end
 
     case value do
       literal when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
