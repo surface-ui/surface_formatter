@@ -35,7 +35,11 @@ defmodule Surface.Code.Formatter do
   """
   @type formatter_node :: surface_node | {:whitespace, whitespace_context}
 
-  @type option :: {:line_length, integer}
+  @typedoc """
+    - `:indent` - Starting depth depending on the context of the ~H sigil
+    - `:line_length` - Maximum line length before wrapping opening tags
+  """
+  @type option :: {:line_length, integer} | {:indent, integer}
 
   @doc """
   Given a string of H-sigil code, return a list of surface nodes including special
@@ -43,10 +47,12 @@ defmodule Surface.Code.Formatter do
   """
   @spec parse(String.t()) :: list(formatter_node)
   def parse(string) do
-    string
-    |> String.trim()
-    |> Surface.Compiler.Parser.parse()
-    |> elem(1)
+    {:ok, parsed_by_surface} =
+      string
+      |> String.trim()
+      |> Surface.Compiler.Parser.parse()
+
+    ["\n" | parsed_by_surface]
     |> Enum.flat_map(&parse_whitespace/1)
     |> contextualize_whitespace()
   end
@@ -54,6 +60,8 @@ defmodule Surface.Code.Formatter do
   @doc "Given a list of surface nodes, return a formatted string of H-sigil code"
   @spec format(list(formatter_node), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
+    opts = Keyword.put_new(opts, :indent, 0)
+
     nodes
     |> Enum.map(&render(&1, opts))
     |> List.flatten()
@@ -193,33 +201,33 @@ defmodule Surface.Code.Formatter do
 
   # Take a formatter_node and return a formatted string
   @spec render(formatter_node, list(option)) :: String.t() | nil
-  defp render(segment, opts, depth \\ 0)
+  defp render(segment, opts)
 
-  defp render({:interpolation, expression, _meta}, opts, _depth) do
+  defp render({:interpolation, expression, _meta}, opts) do
     "{{ #{Code.format_string!(expression, opts)} }}"
   end
 
-  defp render({:whitespace, :before_whitespace}, _opts, _depth) do
+  defp render({:whitespace, :before_whitespace}, _opts) do
     # There are multiple newlines in a row; don't add spaces
     # if there aren't going to be other characters after it
     "\n"
   end
 
-  defp render({:whitespace, :before_child}, _opts, depth) do
-    "\n#{String.duplicate(@tab, depth)}"
+  defp render({:whitespace, :before_child}, opts) do
+    "\n#{String.duplicate(@tab, opts[:indent])}"
   end
 
-  defp render({:whitespace, :before_closing_tag}, _opts, depth) do
-    "\n#{String.duplicate(@tab, max(depth - 1, 0))}"
+  defp render({:whitespace, :before_closing_tag}, opts) do
+    "\n#{String.duplicate(@tab, max(opts[:indent] - 1, 0))}"
   end
 
-  defp render(html, _opts, _depth) when is_binary(html) do
+  defp render(html, _opts) when is_binary(html) do
     html
   end
 
-  defp render({tag, attributes, children, _meta}, opts, depth) do
+  defp render({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
-    indentation = String.duplicate(@tab, depth)
+    indentation = String.duplicate(@tab, opts[:indent])
 
     rendered_attributes =
       attributes
@@ -249,7 +257,7 @@ defmodule Surface.Code.Formatter do
     opening =
       if length(attributes) > 1 &&
            String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
-        indented_attributes = Enum.map(rendered_attributes, &indent(&1, depth + 1))
+        indented_attributes = Enum.map(rendered_attributes, &indent(&1, opts[:indent] + 1))
 
         [
           "<#{tag}",
@@ -271,8 +279,9 @@ defmodule Surface.Code.Formatter do
         [contents] = children
         contents
       else
-        children
-        |> Enum.map(&render(&1, opts, depth + 1))
+        next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
+
+        Enum.map(children, &render(&1, next_opts))
       end
 
     closing = "</#{tag}>"
@@ -300,6 +309,8 @@ defmodule Surface.Code.Formatter do
 
   defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
        when is_binary(expression) do
+    # ⚠️ Warning - Hacky hack town at the top of this function
+
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
@@ -307,15 +318,25 @@ defmodule Surface.Code.Formatter do
     ["[", next_segment | _rest] = wrapped_formatted_expression
 
     formatted_expression =
-      if String.trim(next_segment) == "" do
-        Enum.slice(wrapped_formatted_expression, 2..-3)
+      if String.trim(next_segment) == "" && next_segment != "" do
+        if wrapped_formatted_expression |> Enum.at(2) |> String.match?(~r/:$/) do
+          # This is Surface sugar; don't mess with it :)
+          wrapped_formatted_expression
+          |> Enum.slice(1..-2)
+          |> to_string()
+        else
+          # If the Elixir formatter broke this into multiple lines, then wrapping it
+          # in an extra list above caused an extra level of indentation. Remove it.
+          wrapped_formatted_expression
+          |> Enum.slice(2..-3)
+          |> to_string()
+          |> String.replace("\n  ", "\n")
+        end
       else
-        Enum.slice(wrapped_formatted_expression, 1..-2)
+        wrapped_formatted_expression
+        |> Enum.slice(1..-2)
+        |> to_string()
       end
-      |> to_string()
-      # If the Elixir formatter broke this into multiple lines, then wrapping it
-      # in an extra list above caused an extra level of indentation. Remove it.
-      |> String.replace("\n  ", "\n")
 
     "[#{formatted_expression}]"
     |> Code.string_to_quoted!()

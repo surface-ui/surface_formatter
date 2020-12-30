@@ -35,25 +35,26 @@ defmodule Mix.Tasks.SurfaceFormat do
     |> Enum.reduce({[], [], []}, &collect_status/2)
   end
 
-  @regex ~r/~H""".*?"""/s
-  defp format_file({file, formatter_opts}, _task_opts) do
-    {input, extra_opts} = read_file(file)
+  @regex ~r/\n(\s*)~H"""(.*?)"""/s
+  defp format_file({file, _formatter_opts}, _task_opts) do
+    {input, _extra_opts} = read_file(file)
 
     if String.match?(input, @regex) do
       output =
         @regex
-        |> Regex.replace(input, fn match ->
-          "~H\"\"\"\n#{
-            match
-            |> String.slice(6..-4)
-            |> Surface.Code.format_string!()
-          }\"\"\""
-        end)
-        # Run Elixir formatter to fix whitespace alignment in H sigil
-        # for now instead of figuring out the proper way to do this.
-        |> Code.format_string!(extra_opts ++ formatter_opts)
+        |> Regex.replace(input, fn _match, indentation, surface_code ->
+          tabs =
+            indentation
+            |> String.length()
+            |> Kernel.div(2)
 
-      output = IO.iodata_to_binary([output, ?\n])
+          "\n#{indentation}~H\"\"\"#{
+            surface_code
+            |> Surface.Code.format_string!(indent: tabs)
+          }#{indentation}\"\"\""
+        end)
+
+      output = IO.iodata_to_binary([output])
       write_or_print(file, input, output)
       :ok
     else

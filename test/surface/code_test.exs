@@ -2,6 +2,7 @@ defmodule Surface.CodeTest do
   use ExUnit.Case
 
   def test_formatter(input_code, expected_formatted_result) do
+    expected_formatted_result = "\n" <> expected_formatted_result
     assert Surface.Code.format_string!(input_code) == expected_formatted_result
   end
 
@@ -71,6 +72,29 @@ defmodule Surface.CodeTest do
       *** Four
               **** Five
         -- Once I caught a fish alive
+      </#MacroComponent>
+      """
+    )
+
+    test_formatter(
+      """
+      <#MacroComponent>
+       * One
+       * Two
+       ** Three
+       *** Four
+               **** Five
+         -- Once I caught a fish alive
+      </#MacroComponent>
+      """,
+      """
+      <#MacroComponent>
+       * One
+       * Two
+       ** Three
+       *** Four
+               **** Five
+         -- Once I caught a fish alive
       </#MacroComponent>
       """
     )
@@ -185,10 +209,38 @@ defmodule Surface.CodeTest do
 
     test_formatter(
       """
+      <Foo bar={{baz: "BAZ", qux: "QUX", long: "LONG", longer: "LONGER", longest: "LONGEST", wrapping: "WRAPPING", next_line: "NEXT_LINE"}} />
+      """,
+      """
+      <Foo bar={{
+        baz: "BAZ",
+        qux: "QUX",
+        long: "LONG",
+        longer: "LONGER",
+        longest: "LONGEST",
+        wrapping: "WRAPPING",
+        next_line: "NEXT_LINE"
+      }} />
+      """
+    )
+
+    test_formatter(
+      """
       <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
       """,
       """
-      <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
+      <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters" />
+      """
+    )
+  end
+
+  test "(bugfix) a trailing interpolation does not get an extra newline added" do
+    test_formatter(
+      """
+      <p>Foo</p><p>Bar</p>{{ baz }}
+      """,
+      """
+      <p>Foo</p><p>Bar</p>{{ baz }}
       """
     )
   end

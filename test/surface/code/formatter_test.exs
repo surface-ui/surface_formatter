@@ -12,6 +12,7 @@ defmodule Surface.Code.FormatterTest do
       """
 
       assert [
+               {:whitespace, :before_child},
                {"div", [],
                 [
                   {:whitespace, :before_child},
