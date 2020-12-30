@@ -231,7 +231,7 @@ defmodule Surface.Code.Formatter do
 
     rendered_attributes =
       attributes
-      |> Enum.map(&render_attribute/1)
+      |> Enum.map(&render_attribute(&1, opts))
 
     joined_attributes =
       case rendered_attributes do
@@ -293,67 +293,85 @@ defmodule Surface.Code.Formatter do
     end
   end
 
-  defp render_attribute({name, value, _meta}) when is_binary(value),
+  defp render_attribute({name, value, _meta}, _opts) when is_binary(value),
     do: "#{name}=\"#{String.trim(value)}\""
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
-  defp render_attribute({name, true, _meta}),
+  defp render_attribute({name, true, _meta}, _opts),
     do: "#{name}"
 
-  defp render_attribute({name, false, _meta}),
+  defp render_attribute({name, false, _meta}, _opts),
     do: "#{name}=false"
 
-  defp render_attribute({name, value, _meta}) when is_integer(value),
+  defp render_attribute({name, value, _meta}, _opts) when is_integer(value),
     do: "#{name}=#{Code.format_string!("#{value}")}"
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta}, opts)
        when is_binary(expression) do
-    # ⚠️ Warning - Hacky hack town at the top of this function
-
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
-    wrapped_formatted_expression = Code.format_string!("[#{expression}]")
-    ["[", next_segment | _rest] = wrapped_formatted_expression
-
-    formatted_expression =
-      if String.trim(next_segment) == "" && next_segment != "" do
-        if wrapped_formatted_expression |> Enum.at(2) |> String.match?(~r/:$/) do
-          # This is Surface sugar; don't mess with it :)
-          wrapped_formatted_expression
-          |> Enum.slice(1..-2)
-          |> to_string()
+    value = case Code.string_to_quoted!("[#{expression}]") do
+      [value] ->
+        if Keyword.keyword?([value]) do
+          [value]
         else
-          # If the Elixir formatter broke this into multiple lines, then wrapping it
-          # in an extra list above caused an extra level of indentation. Remove it.
-          wrapped_formatted_expression
-          |> Enum.slice(2..-3)
-          |> to_string()
-          |> String.replace("\n  ", "\n")
+          value
         end
-      else
-        wrapped_formatted_expression
-        |> Enum.slice(1..-2)
-        |> to_string()
-      end
 
-    "[#{formatted_expression}]"
-    |> Code.string_to_quoted!()
-    |> case do
-      [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
+      keyword_list ->
+        keyword_list
+    end
+
+    case value do
+      literal when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
         # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
         # so render it without the brackets
-        render_attribute({name, literal, meta})
+        render_attribute({name, literal, meta}, opts)
 
-      _ ->
-        if String.contains?(formatted_expression, "\n") do
+      list when is_list(list) ->
+        formatted =
+          if Keyword.keyword?(list) do
+            # Handle keyword lists, which will be stripped of the outer brackets
+            # per surface syntax sugar
+
+            # This is Surface sugar; don't mess with it :)
+            "[#{expression}]"
+            |> Code.format_string!()
+            |> Enum.slice(1..-2)
+            |> to_string()
+          else
+            indentation = String.duplicate(@tab, opts[:indent])
+
+            expression
+            |> Code.format_string!()
+            |> to_string()
+            |> String.replace("\n", "\n#{indentation}")
+          end
+
+        if String.contains?(formatted, "\n") do
           # Don't add extra space characters around the curly braces because
           # the formatted elixir code has newlines in it; this helps indentation
           # to line up.
-          "#{name}={{#{formatted_expression}}}"
+          "#{name}={{#{formatted}}}"
         else
-          "#{name}={{ #{formatted_expression} }}"
+          "#{name}={{ #{formatted} }}"
+        end
+
+      _ ->
+        formatted =
+          expression
+          |> Code.format_string!()
+          |> to_string()
+
+        if String.contains?(formatted, "\n") do
+          # Don't add extra space characters around the curly braces because
+          # the formatted elixir code has newlines in it; this helps indentation
+          # to line up.
+          "#{name}={{#{formatted}}}"
+        else
+          "#{name}={{ #{formatted} }}"
         end
     end
   end

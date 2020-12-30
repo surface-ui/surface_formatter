@@ -124,6 +124,53 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "interpolation in attributes is formatted as expected" do
+    test_formatter(
+      """
+      <div class={{[1, 2, 3]}} />
+      """,
+      """
+      <div class={{ [1, 2, 3] }} />
+      """
+    )
+
+    test_formatter(
+      """
+      <div class={{foo: "foofoofoofoofoofoofoofoofoofoo", bar: "barbarbarbarbarbarbarbarbarbarbar", baz: "bazbazbazbazbazbazbazbaz"}} />
+      """,
+      """
+      <div class={{
+        foo: "foofoofoofoofoofoofoofoofoofoo",
+        bar: "barbarbarbarbarbarbarbarbarbarbar",
+        baz: "bazbazbazbazbazbazbazbaz"
+      }} />
+      """
+    )
+  end
+
+  test "interpolation in attributes of deeply nested elements" do
+    test_formatter(
+      """
+      <section>
+      <div>
+      <p class={{["foofoofoofoofoofoofoofoofoofoo", "barbarbarbarbarbarbarbarbarbarbar", "bazbazbazbazbazbazbazbaz"]}} />
+      </div>
+      </section>
+      """,
+      """
+      <section>
+        <div>
+          <p class={{[
+            "foofoofoofoofoofoofoofoofoofoo",
+            "barbarbarbarbarbarbarbarbarbarbar",
+            "bazbazbazbazbazbazbazbaz"
+          ]}} />
+        </div>
+      </section>
+      """
+    )
+  end
+
   test "boolean, integer, and string literals in attributes are not wrapped in Surface brackets" do
     test_formatter(
       """
