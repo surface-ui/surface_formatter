@@ -1,9 +1,9 @@
 defmodule Surface.CodeTest do
   use ExUnit.Case
 
-  def test_formatter(input_code, expected_formatted_result) do
+  def test_formatter(input_code, expected_formatted_result, opts \\ []) do
     expected_formatted_result = "\n" <> expected_formatted_result
-    assert Surface.Code.format_string!(input_code) == expected_formatted_result
+    assert Surface.Code.format_string!(input_code, opts) == expected_formatted_result
   end
 
   test "children are indented 1 from parents" do
@@ -227,6 +227,36 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "attribute wrapping can be configured by :line_length and :surface_line_length (which is given precedence) in opts" do
+    test_formatter(
+      """
+      <Foo bar="bar" baz="baz"/>
+      """,
+      """
+      <Foo
+        bar="bar"
+        baz="baz"
+      />
+      """,
+      line_length: 20
+    )
+
+    test_formatter(
+      """
+      <Foo bar="bar" baz="baz"/>
+      """,
+      """
+      <Foo
+        bar="bar"
+        baz="baz"
+      />
+      """,
+      surface_line_length: 20,
+      # Demonstrate that surface_line_length is given precedence over line_length
+      line_length: 200
+    )
+  end
+
   test "a single attribute always begins on the same line as the opening tag" do
     # Wrap in another element to help test whether indentation is working properly
 
@@ -422,6 +452,28 @@ defmodule Surface.CodeTest do
           second=123
         />
       </Parent>
+      """
+    )
+  end
+
+  test "tags without children are collapsed if there is no whitespace between them" do
+    test_formatter(
+      """
+      <Foo></Foo>
+      """,
+      """
+      <Foo />
+      """
+    )
+
+    # Should these be collapsed?
+    test_formatter(
+      """
+      <Foo> </Foo>
+      """,
+      """
+      <Foo>
+      </Foo>
       """
     )
   end

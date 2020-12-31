@@ -39,7 +39,7 @@ defmodule Surface.Code.Formatter do
     - `:indent` - Starting depth depending on the context of the ~H sigil
     - `:line_length` - Maximum line length before wrapping opening tags
   """
-  @type option :: {:line_length, integer} | {:indent, integer}
+  @type option :: {:line_length, integer} | {:surface_line_length, integer} | {:indent, integer}
 
   @doc """
   Given a string of H-sigil code, return a list of surface nodes including special
@@ -250,7 +250,7 @@ defmodule Surface.Code.Formatter do
           end
         }>"
 
-    line_length = Keyword.get(opts, :line_length, @default_line_length)
+    line_length = opts[:surface_line_length] || opts[:line_length] || @default_line_length
     attributes_contain_newline = String.contains?(joined_attributes, "\n")
     line_length_exceeded = String.length(opening) > line_length
 
