@@ -36,8 +36,8 @@ defmodule Mix.Tasks.SurfaceFormat do
   end
 
   @regex ~r/\n(\s*)~H"""(.*?)"""/s
-  defp format_file({file, _formatter_opts}, _task_opts) do
-    {input, _extra_opts} = read_file(file)
+  defp format_file({file, formatter_opts}, _task_opts) do
+    {input, extra_opts} = read_file(file)
 
     if String.match?(input, @regex) do
       output =
@@ -48,9 +48,11 @@ defmodule Mix.Tasks.SurfaceFormat do
             |> String.length()
             |> Kernel.div(2)
 
+          opts = Keyword.put(formatter_opts ++ extra_opts, :indent, tabs)
+
           "\n#{indentation}~H\"\"\"#{
             surface_code
-            |> Surface.Code.format_string!(indent: tabs)
+            |> Surface.Code.format_string!(opts)
           }#{indentation}\"\"\""
         end)
 
