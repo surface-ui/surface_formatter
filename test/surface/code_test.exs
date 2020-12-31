@@ -339,4 +339,90 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "Fix bug in UCBI dev" do
+    test_formatter(
+      """
+      <Parent>
+        <Child
+          first=123
+          second={{[
+                  {"foo", application.description},
+                  {"baz", application.product_owner}
+                ]}}
+        />
+      </Parent>
+      """,
+      """
+      <Parent>
+        <Child
+          first=123
+          second={{[
+            {"foo", application.description},
+            {"baz", application.product_owner}
+          ]}}
+        />
+      </Parent>
+      """
+    )
+  end
+
+  test "If any attribute is formatted with a newline, attributes are split onto separate lines" do
+    # This is because multiple of them may have newlines, and it could result in odd formatting such as:
+    #
+    # <Foo bar=1 baz={{[
+    #   "bazz",
+    #   "bazz",
+    #   "bazz"
+    # ]}} qux=false />
+    #
+    # The attributes aren't the easiest to read in that case, and we're making the choice not
+    # to open the can of worms of potentially re-ordering attributes, because that introduces
+    # plenty of complexity and might not be desired by users.
+    test_formatter(
+      """
+      <Parent>
+        <Child
+          first=123
+          second={{[
+                  {"foo", foo},
+                  {"bar", bar}
+                ]}}
+        />
+      </Parent>
+      """,
+      """
+      <Parent>
+        <Child
+          first=123
+          second={{[
+            {"foo", foo},
+            {"bar", bar}
+          ]}}
+        />
+      </Parent>
+      """
+    )
+
+    test_formatter(
+      """
+      <Parent>
+        <Child first={{[
+        {"foo", foo}, {"bar", bar}
+        ]}} second=123 />
+      </Parent>
+      """,
+      """
+      <Parent>
+        <Child
+          first={{[
+            {"foo", foo},
+            {"bar", bar}
+          ]}}
+          second=123
+        />
+      </Parent>
+      """
+    )
+  end
 end

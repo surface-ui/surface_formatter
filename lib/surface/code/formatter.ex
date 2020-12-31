@@ -228,10 +228,7 @@ defmodule Surface.Code.Formatter do
   defp render({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])
-
-    rendered_attributes =
-      attributes
-      |> Enum.map(&render_attribute(&1, opts))
+    rendered_attributes = Enum.map(attributes, &render_attribute/1)
 
     joined_attributes =
       case rendered_attributes do
@@ -253,17 +250,23 @@ defmodule Surface.Code.Formatter do
           end
         }>"
 
+    line_length = Keyword.get(opts, :line_length, @default_line_length)
+    attributes_contain_newline = String.contains?(joined_attributes, "\n")
+    line_length_exceeded = String.length(opening) > line_length
+
+    attributes_on_separate_lines =
+      length(attributes) > 1 and (attributes_contain_newline or line_length_exceeded)
+
     # Maybe split opening tag onto multiple lines depending on line length
     opening =
-      if length(attributes) > 1 &&
-           String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
+      if attributes_on_separate_lines do
         attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
 
         indented_attributes =
           Enum.map(
             rendered_attributes,
             fn attr ->
-              # This is pretty hacky, but it's an attempt to get
+              # This is pretty hacky, but it's an attempt to get things like
               #   class={{
               #     "foo",
               #     @bar,
@@ -288,7 +291,11 @@ defmodule Surface.Code.Formatter do
         |> List.flatten()
         |> Enum.join("\n")
       else
-        opening
+        # We're not splitting attributes onto their own newlines,
+        # but it's possible that an attribute has a newline in it
+        # (for interpolated maps/lists) so ensure those lines are indented.
+        attr_indentation = String.duplicate(@tab, opts[:indent])
+        String.replace(opening, "\n", "\n#{attr_indentation}")
       end
 
     rendered_children =
@@ -301,30 +308,28 @@ defmodule Surface.Code.Formatter do
         Enum.map(children, &render(&1, next_opts))
       end
 
-    closing = "</#{tag}>"
-
     if self_closing do
       "#{opening}"
     else
-      "#{opening}#{rendered_children}#{closing}"
+      "#{opening}#{rendered_children}</#{tag}>"
     end
   end
 
-  defp render_attribute({name, value, _meta}, _opts) when is_binary(value),
+  defp render_attribute({name, value, _meta}) when is_binary(value),
     do: "#{name}=\"#{String.trim(value)}\""
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
-  defp render_attribute({name, true, _meta}, _opts),
+  defp render_attribute({name, true, _meta}),
     do: "#{name}"
 
-  defp render_attribute({name, false, _meta}, _opts),
+  defp render_attribute({name, false, _meta}),
     do: "#{name}=false"
 
-  defp render_attribute({name, value, _meta}, _opts) when is_integer(value),
+  defp render_attribute({name, value, _meta}) when is_integer(value),
     do: "#{name}=#{Code.format_string!("#{value}")}"
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta}, opts)
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
@@ -335,7 +340,7 @@ defmodule Surface.Code.Formatter do
       [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
         # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
         # that can exclude the brackets, so render it without the brackets
-        render_attribute({name, literal, meta}, opts)
+        render_attribute({name, literal, meta})
 
       _ ->
         formatted_expression =
@@ -354,12 +359,10 @@ defmodule Surface.Code.Formatter do
           end
 
         if String.contains?(formatted_expression, "\n") do
-          indentation = String.duplicate(@tab, opts[:indent])
-
           # Don't add extra space characters around the curly braces because
           # the formatted elixir code has newlines in it; this helps indentation
           # to line up.
-          "#{name}={{#{String.replace(formatted_expression, "\n", "\n#{indentation}")}}}"
+          "#{name}={{#{formatted_expression}}}"
         else
           "#{name}={{ #{formatted_expression} }}"
         end
