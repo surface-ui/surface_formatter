@@ -257,7 +257,24 @@ defmodule Surface.Code.Formatter do
     opening =
       if length(attributes) > 1 &&
            String.length(opening) > Keyword.get(opts, :line_length, @default_line_length) do
-        indented_attributes = Enum.map(rendered_attributes, &indent(&1, opts[:indent] + 1))
+        attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
+
+        indented_attributes =
+          Enum.map(
+            rendered_attributes,
+            fn attr ->
+              # This is pretty hacky, but it's an attempt to get
+              #   class={{
+              #     "foo",
+              #     @bar,
+              #     baz: true
+              #   }}
+              # to look right
+              with_newlines_indented = String.replace(attr, "\n", "\n#{attr_indentation}")
+
+              "#{attr_indentation}#{with_newlines_indented}"
+            end
+          )
 
         [
           "<#{tag}",
@@ -312,114 +329,46 @@ defmodule Surface.Code.Formatter do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
-    value =
-      case Code.string_to_quoted!("[#{expression}]") do
-        [value] ->
-          if Keyword.keyword?([value]) do
-            [value]
-          else
-            value
-          end
+    quoted_wrapped_expression = Code.string_to_quoted!("[#{expression}]")
 
-        keyword_list ->
-          keyword_list
-      end
-
-    case value do
-      literal when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
+    case quoted_wrapped_expression do
+      [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
         # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
-        # so render it without the brackets
+        # that can exclude the brackets, so render it without the brackets
         render_attribute({name, literal, meta}, opts)
 
-      list when is_list(list) ->
-        formatted =
-          if Keyword.keyword?(list) do
+      _ ->
+        formatted_expression =
+          if Keyword.keyword?(quoted_wrapped_expression) do
             # Handle keyword lists, which will be stripped of the outer brackets
             # per surface syntax sugar
 
-            # This is Surface sugar; don't mess with it :)
             "[#{expression}]"
             |> Code.format_string!()
             |> Enum.slice(1..-2)
             |> to_string()
           else
-            indentation = String.duplicate(@tab, opts[:indent])
-
             expression
             |> Code.format_string!()
             |> to_string()
-            |> String.replace("\n", "\n#{indentation}")
           end
 
-        if String.contains?(formatted, "\n") do
+        if String.contains?(formatted_expression, "\n") do
+          indentation = String.duplicate(@tab, opts[:indent])
+
           # Don't add extra space characters around the curly braces because
           # the formatted elixir code has newlines in it; this helps indentation
           # to line up.
-          "#{name}={{#{formatted}}}"
+          "#{name}={{#{String.replace(formatted_expression, "\n", "\n#{indentation}")}}}"
         else
-          "#{name}={{ #{formatted} }}"
-        end
-
-      _ ->
-        formatted =
-          expression
-          |> Code.format_string!()
-          |> to_string()
-
-        if String.contains?(formatted, "\n") do
-          # Don't add extra space characters around the curly braces because
-          # the formatted elixir code has newlines in it; this helps indentation
-          # to line up.
-          "#{name}={{#{formatted}}}"
-        else
-          "#{name}={{ #{formatted} }}"
+          "#{name}={{ #{formatted_expression} }}"
         end
     end
   end
 
-  defp indent(string, depth) do
-    # Ensure if they pass in a negative depth that we don't crash
-    depth = max(depth, 0)
-
-    indentation = String.duplicate(@tab, depth)
-
-    # This is pretty hacky, but it's an attempt to get
-    #   class={{
-    #     "foo",
-    #     @bar,
-    #     baz: true
-    #   }}
-    # to look right
-    string_with_newlines_indented = String.replace(string, "\n", "\n#{indentation}")
-
-    "#{indentation}#{string_with_newlines_indented}"
-  end
-
-  @doc """
-  Don't modify contents of macro components or <pre> and <code> tags
-
-  ### Examples
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("div")
-      false
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("p")
-      false
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("pre")
-      true
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("code")
-      true
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("#Markdown")
-      true
-
-      iex> Surface.Code.Formatter.render_contents_verbatim?("#CustomMacroComponent")
-      true
-  """
-  def render_contents_verbatim?("#" <> _), do: true
-  def render_contents_verbatim?("pre"), do: true
-  def render_contents_verbatim?("code"), do: true
-  def render_contents_verbatim?(tag) when is_binary(tag), do: false
+  # Don't modify contents of macro components or <pre> and <code> tags
+  defp render_contents_verbatim?("#" <> _), do: true
+  defp render_contents_verbatim?("pre"), do: true
+  defp render_contents_verbatim?("code"), do: true
+  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
 end

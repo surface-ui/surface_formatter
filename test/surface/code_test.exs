@@ -228,55 +228,73 @@ defmodule Surface.CodeTest do
   end
 
   test "a single attribute always begins on the same line as the opening tag" do
+    # Wrap in another element to help test whether indentation is working properly
+
     test_formatter(
       """
+      <p>
       <Foo bio={{%{age: 23, name: "John Jacob Jingleheimerschmidt", title: "Lead rockstar 10x ninja brogrammer", reports_to: "James Jacob Jingleheimerschmidt"}}}/>
+      </p>
       """,
       """
-      <Foo bio={{%{
-        age: 23,
-        name: "John Jacob Jingleheimerschmidt",
-        title: "Lead rockstar 10x ninja brogrammer",
-        reports_to: "James Jacob Jingleheimerschmidt"
-      }}} />
+      <p>
+        <Foo bio={{%{
+          age: 23,
+          name: "John Jacob Jingleheimerschmidt",
+          title: "Lead rockstar 10x ninja brogrammer",
+          reports_to: "James Jacob Jingleheimerschmidt"
+        }}} />
+      </p>
       """
     )
 
     test_formatter(
       """
-      <Foo urls={{["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}}/>
+      <p>
+        <Foo urls={{["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}}/>
+      </p>
       """,
       """
-      <Foo urls={{[
-        "https://hexdocs.pm/elixir/DateTime.html#content",
-        "https://hexdocs.pm/elixir/Exception.html#content"
-      ]}} />
+      <p>
+        <Foo urls={{[
+          "https://hexdocs.pm/elixir/DateTime.html#content",
+          "https://hexdocs.pm/elixir/Exception.html#content"
+        ]}} />
+      </p>
       """
     )
 
     test_formatter(
       """
+      <p>
       <Foo bar={{baz: "BAZ", qux: "QUX", long: "LONG", longer: "LONGER", longest: "LONGEST", wrapping: "WRAPPING", next_line: "NEXT_LINE"}} />
+      </p>
       """,
       """
-      <Foo bar={{
-        baz: "BAZ",
-        qux: "QUX",
-        long: "LONG",
-        longer: "LONGER",
-        longest: "LONGEST",
-        wrapping: "WRAPPING",
-        next_line: "NEXT_LINE"
-      }} />
+      <p>
+        <Foo bar={{
+          baz: "BAZ",
+          qux: "QUX",
+          long: "LONG",
+          longer: "LONGER",
+          longest: "LONGEST",
+          wrapping: "WRAPPING",
+          next_line: "NEXT_LINE"
+        }} />
+      </p>
       """
     )
 
     test_formatter(
       """
+      <p>
       <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
+      </p>
       """,
       """
-      <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters" />
+      <p>
+        <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters" />
+      </p>
       """
     )
   end
@@ -288,6 +306,36 @@ defmodule Surface.CodeTest do
       """,
       """
       <p>Foo</p><p>Bar</p>{{ baz }}
+      """
+    )
+  end
+
+  test "Contents of <pre> and <code> tags aren't formatted" do
+    # Note that the output looks pretty messy, but it's because
+    # we're retaining 100% of the exact characters between the
+    # <pre> and </pre> tags, etc.
+    test_formatter(
+      """
+      <p>
+      <pre>
+          Four
+       One
+               Nine
+      </pre> </p> <div> <code>Some code
+      goes    here   </code> </div>
+      """,
+      """
+      <p>
+        <pre>
+          Four
+       One
+               Nine
+      </pre>
+      </p>
+      <div>
+        <code>Some code
+      goes    here   </code>
+      </div>
       """
     )
   end

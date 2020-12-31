@@ -1,7 +1,5 @@
 defmodule Surface.Code.FormatterTest do
-  @moduledoc "Run doctests for `Surface.Code.Formatter`"
   use ExUnit.Case
-  doctest Surface.Code.Formatter
 
   describe "parse/1" do
     test "adds context to whitespace" do
