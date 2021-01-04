@@ -38,8 +38,9 @@ defmodule Mix.Tasks.SurfaceFormat do
   @regex ~r/\n(\s*)~H"""(.*?)"""/s
   defp format_file({file, formatter_opts}, _task_opts) do
     {input, extra_opts} = read_file(file)
+    ignore_file = String.match?(input, ~r/#\s*surface_format:disable-for-this-file/)
 
-    if String.match?(input, @regex) do
+    if String.match?(input, @regex) and (not ignore_file) do
       output =
         @regex
         |> Regex.replace(input, fn _match, indentation, surface_code ->
