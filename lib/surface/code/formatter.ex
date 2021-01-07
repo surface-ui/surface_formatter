@@ -369,6 +369,26 @@ defmodule Surface.Code.Formatter do
     end
   end
 
+  defp render_attribute({name, strings_and_expressions, _meta}) when is_list(strings_and_expressions) do
+    formatted_expressions =
+      strings_and_expressions
+      |> Enum.map(fn
+        string when is_binary(string) ->
+          string
+
+        {:attribute_expr, expression, _expr_meta} ->
+          formatted_expression =
+            expression
+            |> Code.format_string!()
+            |> to_string()
+
+          "{{ #{formatted_expression} }}"
+      end)
+      |> Enum.join()
+
+    "#{name}=\"#{formatted_expressions}\""
+  end
+
   # Don't modify contents of macro components or <pre> and <code> tags
   defp render_contents_verbatim?("#" <> _), do: true
   defp render_contents_verbatim?("pre"), do: true

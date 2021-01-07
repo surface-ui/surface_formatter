@@ -171,6 +171,21 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "interpolation in string attributes" do
+    # Note that the formatter does not remove the extra whitespace at the end of the string.
+    # We have no context about whether the whitespace in the given attribute is significant,
+    # so we might break code by modifying it. Therefore, the contents of string attributes
+    # are left alone other than formatting interpolated expressions.
+    test_formatter(
+      """
+      <Component foo="bar {{@baz}}  "></Component>
+      """,
+      """
+      <Component foo="bar {{ @baz }}  " />
+      """
+    )
+  end
+
   test "boolean, integer, and string literals in attributes are not wrapped in Surface brackets" do
     test_formatter(
       """
