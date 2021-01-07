@@ -493,7 +493,7 @@ defmodule Surface.CodeTest do
     )
   end
 
-  test "temp" do
+  test "interpolated lists in attributes with invisible brackets are formatted" do
     test_formatter(
       ~S"""
       <Component foo={{ "bar", 1, @a_very_long_name_in_assigns <> @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression }} />
@@ -505,6 +505,29 @@ defmodule Surface.CodeTest do
         @a_very_long_name_in_assigns <>
           @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression
       }} />
+      """
+    )
+  end
+
+  test "existing whitespace in string attributes is not altered when there are multiple attributes" do
+    # The output may not look "clean", but it didn't look "clean" to begin with, and it's the only
+    # way to ensure the formatter doesn't accidentally change the behavior of the resulting code.
+    #
+    # As with the Elixir formatter, it's important that the semantics of the code remain the same.
+    test_formatter(
+      """
+      <Component foo=false bar="a
+        b
+        c"
+      />
+      """,
+      """
+      <Component
+        foo=false
+        bar="a
+        b
+        c"
+      />
       """
     )
   end

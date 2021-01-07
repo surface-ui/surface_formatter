@@ -230,20 +230,28 @@ defmodule Surface.Code.Formatter do
     indentation = String.duplicate(@tab, opts[:indent])
     rendered_attributes = Enum.map(attributes, &render_attribute/1)
 
-    joined_attributes =
+    attributes_on_same_line =
       case rendered_attributes do
         [] ->
           ""
 
         rendered_attributes ->
           # Prefix attributes string with a space (for after tag name)
-          " " <> Enum.join(rendered_attributes, " ")
+          joined_attributes =
+            rendered_attributes
+            |> Enum.map(fn
+              {:do_not_indent_newlines, attr} -> attr
+              attr -> attr
+            end)
+            |> Enum.join(" ")
+
+          " " <> joined_attributes
       end
 
     opening =
       "<" <>
         tag <>
-        joined_attributes <>
+        attributes_on_same_line <>
         "#{
           if self_closing do
             " /"
@@ -251,31 +259,35 @@ defmodule Surface.Code.Formatter do
         }>"
 
     line_length = opts[:surface_line_length] || opts[:line_length] || @default_line_length
-    attributes_contain_newline = String.contains?(joined_attributes, "\n")
+    attributes_contain_newline = String.contains?(attributes_on_same_line, "\n")
     line_length_exceeded = String.length(opening) > line_length
 
-    attributes_on_separate_lines =
+    put_attributes_on_separate_lines =
       length(attributes) > 1 and (attributes_contain_newline or line_length_exceeded)
 
     # Maybe split opening tag onto multiple lines depending on line length
     opening =
-      if attributes_on_separate_lines do
+      if put_attributes_on_separate_lines do
         attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
 
         indented_attributes =
           Enum.map(
             rendered_attributes,
-            fn attr ->
-              # This is pretty hacky, but it's an attempt to get things like
-              #   class={{
-              #     "foo",
-              #     @bar,
-              #     baz: true
-              #   }}
-              # to look right
-              with_newlines_indented = String.replace(attr, "\n", "\n#{attr_indentation}")
+            fn
+              {:do_not_indent_newlines, attr} ->
+                "#{attr_indentation}#{attr}"
 
-              "#{attr_indentation}#{with_newlines_indented}"
+              attr ->
+                # This is pretty hacky, but it's an attempt to get things like
+                #   class={{
+                #     "foo",
+                #     @bar,
+                #     baz: true
+                #   }}
+                # to look right
+                with_newlines_indented = String.replace(attr, "\n", "\n#{attr_indentation}")
+
+                "#{attr_indentation}#{with_newlines_indented}"
             end
           )
 
@@ -315,8 +327,23 @@ defmodule Surface.Code.Formatter do
     end
   end
 
-  defp render_attribute({name, value, _meta}) when is_binary(value),
-    do: "#{name}=\"#{String.trim(value)}\""
+  @spec render_attribute({String.t(), term, map}) ::
+          String.t() | {:do_not_indent_newlines, String.t()}
+  defp render_attribute({name, value, _meta}) when is_binary(value) do
+    # This is a string, and it might contain newlines. By returning
+    # `{:do_not_indent_newlines, formatted}` we instruct `render/1`
+    # to leave newlines alone instead of adding extra tabs at the
+    # beginning of the line.
+    #
+    # Before this behavior, the extra lines in the `bar` attribute below
+    # would be further indented each time the formatter was run.
+    #
+    # <Component foo=false bar="a
+    #   b
+    #   c"
+    # />
+    {:do_not_indent_newlines, "#{name}=\"#{String.trim(value)}\""}
+  end
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
