@@ -9,7 +9,7 @@ Add as a dependency in `mix.exs`:
 ```elixir
 defp deps do
   [
-    {:surface_formatter, git: "https://github.com/paulstatezny/surface-formatter.git", tag: "master"}
+    {:surface_formatter, git: "https://github.com/paulstatezny/surface-formatter.git", tag: "0.2.8"}
   ]
 end
 ```
