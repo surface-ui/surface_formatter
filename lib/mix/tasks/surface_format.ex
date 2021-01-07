@@ -65,6 +65,7 @@ defmodule Mix.Tasks.SurfaceFormat do
     end
   rescue
     exception ->
+      IO.inspect(exception, label: "exception formatting #{file}")
       {:exit, file, exception, __STACKTRACE__}
   end
 
