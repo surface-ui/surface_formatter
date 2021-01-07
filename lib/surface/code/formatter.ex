@@ -83,31 +83,23 @@ defmodule Surface.Code.Formatter do
     trimmed_html = String.trim(html)
 
     if trimmed_html == "" do
-      # This is nothing but whitespace. Only include a newline
-      # "before" this node (i.e. one \n instead of two) unless there
-      # are at least 2 \n's in the string
-
-      newlines =
-        html
-        |> String.graphemes()
-        |> Enum.count(&(&1 == "\n"))
-
-      if newlines < 2 do
-        # There's just a bunch of spaces or at most one newline
-        [:whitespace]
-      else
-        # There are at least two newlines; collapse them down to two
-        [:whitespace, :whitespace]
-      end
+      collapse_whitespace(html)
     else
       trimmed_html_segments =
         trimmed_html
         # Collapse any string of whitespace that includes a newline down to only
         # the newline
-        |> String.replace(~r/\s*\n\s*+/, "\n")
+        |> String.replace(~r/\s*\n\s*+/, fn whitespace ->
+          whitespace
+          |> collapse_whitespace()
+          |> case do
+            [:whitespace] -> "\n"
+            [:whitespace, :whitespace] -> "\n\n"
+          end
+        end)
         # Then split into separate logical nodes so the formatter can format
         # the newlines appropriately.
-        |> String.split("\n", trim: true)
+        |> String.split("\n")
         |> Enum.intersperse(:whitespace)
 
       [
@@ -120,8 +112,7 @@ defmodule Surface.Code.Formatter do
         end
       ]
       |> List.flatten()
-      # Remove nils
-      |> Enum.filter(&Function.identity/1)
+      |> Enum.reject(& &1 in [nil, ""])
     end
   end
 
@@ -151,6 +142,27 @@ defmodule Surface.Code.Formatter do
 
   # Not a string; do nothing
   def parse_whitespace(node), do: [node]
+
+  # Given a string only containing whitespace, return [:whitespace, :whitespace] if
+  # there is more than one \n, otherwise [:whitespace].
+  #
+  # This helps us defer to the existing code formatting and retain (at most one)
+  # extra newline in between nodes.
+  @spec collapse_whitespace(String.t) :: list(:whitespace)
+  defp collapse_whitespace(whitespace_string) when is_binary(whitespace_string) do
+    newlines =
+      whitespace_string
+      |> String.graphemes()
+      |> Enum.count(&(&1 == "\n"))
+
+    if newlines < 2 do
+      # There's just a bunch of spaces or at most one newline
+      [:whitespace]
+    else
+      # There are at least two newlines; collapse them down to two
+      [:whitespace, :whitespace]
+    end
+  end
 
   @spec contextualize_whitespace(list(surface_node | :whitespace)) :: list(formatter_node)
   defp contextualize_whitespace(nodes, accumulated \\ [])

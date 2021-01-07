@@ -572,4 +572,23 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "a single extra newline between children is retained" do
+    test_formatter(
+      """
+      <Component>
+        foo
+
+        bar
+      </Component>
+      """,
+      """
+      <Component>
+        foo
+
+        bar
+      </Component>
+      """
+    )
+  end
 end
