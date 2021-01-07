@@ -18,6 +18,7 @@ defmodule Surface.Code.FormatterTest do
                    [
                      {:whitespace, :before_child},
                      "Hello",
+                     {:whitespace, :before_whitespace},
                      {:whitespace, :before_child},
                      "Goodbye",
                      {:whitespace, :before_closing_tag}
