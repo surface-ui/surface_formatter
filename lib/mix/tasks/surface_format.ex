@@ -35,7 +35,7 @@ defmodule Mix.Tasks.SurfaceFormat do
     |> Enum.reduce({[], [], []}, &collect_status/2)
   end
 
-  @regex ~r/\n(\s*)~H"""(.*?)"""/s
+  @regex ~r/\n( *)~H"""(.*?)"""/s
   defp format_file({file, formatter_opts}, _task_opts) do
     {input, extra_opts} = read_file(file)
     ignore_file = String.match?(input, ~r/#\s*surface_format:disable-for-this-file/)
