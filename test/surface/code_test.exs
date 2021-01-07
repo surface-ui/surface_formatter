@@ -531,4 +531,15 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "attributes that are a list merged with a keyword list are formatted" do
+    test_formatter(
+      """
+      <span class={{"container", "container--dark": @dark_mode}} />
+      """,
+      """
+      <span class={{ "container", "container--dark": @dark_mode }} />
+      """
+    )
+  end
 end

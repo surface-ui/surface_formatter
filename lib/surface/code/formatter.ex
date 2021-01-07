@@ -370,19 +370,13 @@ defmodule Surface.Code.Formatter do
         render_attribute({name, literal, meta})
 
       _ ->
-        # The `Enum.any?` below is a hacky way of checking if the contents are
-        # something like:
+        # This is a somewhat hacky way of checking if the contents are something like:
         #
         #   foo={{ "bar", @baz, :qux }}
+        #   foo={{ "bar", baz: true }}
         #
-        # which is valid Surface syntax; an outer list wrapping the entire
-        # expression is implied.
-        has_invisible_brackets =
-          Keyword.keyword?(quoted_wrapped_expression) or
-            Enum.any?(quoted_wrapped_expression, fn
-              {_, [line: _], [{_, [line: _], _} | _]} -> true
-              _ -> false
-            end)
+        # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
+        has_invisible_brackets = Keyword.keyword?(quoted_wrapped_expression) or length(quoted_wrapped_expression) > 1
 
         formatted_expression =
           if has_invisible_brackets do
