@@ -283,7 +283,7 @@ defmodule Surface.Code.Formatter do
           " " <> joined_attributes
       end
 
-    opening =
+    opening_on_one_line =
       "<" <>
         tag <>
         attributes_on_same_line <>
@@ -295,7 +295,7 @@ defmodule Surface.Code.Formatter do
 
     line_length = opts[:surface_line_length] || opts[:line_length] || @default_line_length
     attributes_contain_newline = String.contains?(attributes_on_same_line, "\n")
-    line_length_exceeded = String.length(opening) > line_length
+    line_length_exceeded = String.length(opening_on_one_line) > line_length
 
     put_attributes_on_separate_lines =
       length(attributes) > 1 and (attributes_contain_newline or line_length_exceeded)
@@ -341,8 +341,36 @@ defmodule Surface.Code.Formatter do
         # We're not splitting attributes onto their own newlines,
         # but it's possible that an attribute has a newline in it
         # (for interpolated maps/lists) so ensure those lines are indented.
+        # We're rebuilding the tag from scratch so we can respect
+        # :do_not_indent_newlines attributes.
         attr_indentation = String.duplicate(@tab, opts[:indent])
-        String.replace(opening, "\n", "\n#{attr_indentation}")
+
+        attributes =
+          case rendered_attributes do
+            [] ->
+              ""
+
+            _ ->
+              joined_attributes =
+                rendered_attributes
+                |> Enum.map(fn
+                  {:do_not_indent_newlines, attr} -> attr
+                  attr -> String.replace(attr, "\n", "\n#{attr_indentation}")
+                end)
+                |> Enum.join(" ")
+
+              # Prefix attributes string with a space (for after tag name)
+              " " <> joined_attributes
+          end
+
+        "<" <>
+          tag <>
+          attributes <>
+          "#{
+            if self_closing do
+              " /"
+            end
+          }>"
       end
 
     rendered_children =

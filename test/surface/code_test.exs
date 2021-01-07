@@ -532,6 +532,27 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "existing whitespace in string attributes is not altered when there is only one attribute" do
+    test_formatter(
+      """
+      <foo>
+        <bar>
+          <baz qux="one
+          two"/>
+        </bar>
+      </foo>
+      """,
+      """
+      <foo>
+        <bar>
+          <baz qux="one
+          two" />
+        </bar>
+      </foo>
+      """
+    )
+  end
+
   test "attributes that are a list merged with a keyword list are formatted" do
     test_formatter(
       """
