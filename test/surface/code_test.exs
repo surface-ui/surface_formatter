@@ -542,4 +542,15 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "temp" do
+    test_formatter(
+      """
+      <Component items={{Enum.map @items, & &1.foo}}/>
+      """,
+      """
+      <Component items={{ Enum.map(@items, & &1.foo) }} />
+      """
+    )
+  end
 end

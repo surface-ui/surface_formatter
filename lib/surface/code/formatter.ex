@@ -361,7 +361,16 @@ defmodule Surface.Code.Formatter do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
     # equivalent to `{{ [foo: "bar"] }}`
-    quoted_wrapped_expression = Code.string_to_quoted!("[#{expression}]")
+    quoted_wrapped_expression =
+      try do
+        Code.string_to_quoted!("[#{expression}]")
+      rescue
+        _exception ->
+          # With some expressions such as function calls without parentheses
+          # (e.g. `Enum.map @items, & &1.foo`) wrapping in square brackets will
+          # emit invalid syntax, so we must catch that here
+          Code.string_to_quoted!(expression)
+      end
 
     case quoted_wrapped_expression do
       [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
@@ -376,7 +385,9 @@ defmodule Surface.Code.Formatter do
         #   foo={{ "bar", baz: true }}
         #
         # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
-        has_invisible_brackets = Keyword.keyword?(quoted_wrapped_expression) or length(quoted_wrapped_expression) > 1
+        has_invisible_brackets =
+          Keyword.keyword?(quoted_wrapped_expression) or
+            (is_list(quoted_wrapped_expression) and length(quoted_wrapped_expression) > 1)
 
         formatted_expression =
           if has_invisible_brackets do
