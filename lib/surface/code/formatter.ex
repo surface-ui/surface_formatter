@@ -204,7 +204,26 @@ defmodule Surface.Code.Formatter do
   # This function allows us to operate deeply on nested children through recursion
   @spec contextualize_whitespace_for_single_node(surface_node) :: surface_node
   defp contextualize_whitespace_for_single_node({tag, attributes, children, meta}) do
-    {tag, attributes, contextualize_whitespace(children), meta}
+    # HTML comments are stripped by Surface, and when this happens
+    # the surrounding text are counted as separate nodes and not joined.
+    # As a result, it's possible to end up with more than 2 consecutive
+    # newlines. So here, we check for that and deduplicate them.
+    children =
+      children
+      |> contextualize_whitespace()
+      |> Enum.chunk_by(& &1 == {:whitespace, :before_whitespace})
+      |> Enum.map(fn
+        [{:whitespace, :before_whitespace} | _] ->
+          # Here is where we actually deduplicate. We have a consecutive list of
+          # N extra newlines, and we collapse them to one.
+          [{:whitespace, :before_whitespace}]
+
+        nodes ->
+          nodes
+      end)
+      |> Enum.flat_map(&Function.identity/1)
+
+    {tag, attributes, children, meta}
   end
 
   defp contextualize_whitespace_for_single_node(node) do

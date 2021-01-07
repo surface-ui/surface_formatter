@@ -591,4 +591,24 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "at most one blank newline is retained when an HTML comment exists" do
+    test_formatter(
+      ~S"""
+      <div>
+        <Component />
+
+        <!-- Comment -->
+        <AfterComment />
+      </div>
+      """,
+      ~S"""
+      <div>
+        <Component />
+
+        <AfterComment />
+      </div>
+      """
+    )
+  end
 end
