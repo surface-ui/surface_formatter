@@ -632,4 +632,15 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "an interpolation with only a code comment is formatted" do
+    test_formatter(
+      """
+      {{# Foo}}
+      """,
+      """
+      {{ # Foo }}
+      """
+    )
+  end
 end
