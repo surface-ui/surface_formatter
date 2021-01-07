@@ -40,7 +40,7 @@ defmodule Mix.Tasks.SurfaceFormat do
     {input, extra_opts} = read_file(file)
     ignore_file = String.match?(input, ~r/#\s*surface_format:disable-for-this-file/)
 
-    if String.match?(input, @regex) and (not ignore_file) do
+    if String.match?(input, @regex) and not ignore_file do
       output =
         @regex
         |> Regex.replace(input, fn _match, indentation, surface_code ->

@@ -369,7 +369,8 @@ defmodule Surface.Code.Formatter do
     end
   end
 
-  defp render_attribute({name, strings_and_expressions, _meta}) when is_list(strings_and_expressions) do
+  defp render_attribute({name, strings_and_expressions, _meta})
+       when is_list(strings_and_expressions) do
     formatted_expressions =
       strings_and_expressions
       |> Enum.map(fn
