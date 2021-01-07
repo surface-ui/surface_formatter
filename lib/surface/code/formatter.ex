@@ -204,7 +204,11 @@ defmodule Surface.Code.Formatter do
   defp render(segment, opts)
 
   defp render({:interpolation, expression, _meta}, opts) do
-    "{{ #{Code.format_string!(expression, opts)} }}"
+    String.replace(
+      "{{ #{Code.format_string!(expression, opts)} }}",
+      "\n",
+      "\n#{String.duplicate(@tab, opts[:indent])}"
+    )
   end
 
   defp render({:whitespace, :before_whitespace}, _opts) do

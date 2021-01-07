@@ -543,13 +543,32 @@ defmodule Surface.CodeTest do
     )
   end
 
-  test "temp" do
+  test "interpolated attributes with a function call that omits parentheses are formatted" do
     test_formatter(
       """
       <Component items={{Enum.map @items, & &1.foo}}/>
       """,
       """
       <Component items={{ Enum.map(@items, & &1.foo) }} />
+      """
+    )
+  end
+
+  test "interpolations that line-wrap are indented properly" do
+    test_formatter(
+      """
+      <Component>
+        {{ link "Log out", to: Routes.user_session_path(Endpoint, :delete), method: :delete, class: "container"}}
+      </Component>
+      """,
+      """
+      <Component>
+        {{ link("Log out",
+          to: Routes.user_session_path(Endpoint, :delete),
+          method: :delete,
+          class: "container"
+        ) }}
+      </Component>
       """
     )
   end
