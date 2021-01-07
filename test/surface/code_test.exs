@@ -492,4 +492,20 @@ defmodule Surface.CodeTest do
       """
     )
   end
+
+  test "temp" do
+    test_formatter(
+      ~S"""
+      <Component foo={{ "bar", 1, @a_very_long_name_in_assigns <> @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression }} />
+      """,
+      ~S"""
+      <Component foo={{
+        "bar",
+        1,
+        @a_very_long_name_in_assigns <>
+          @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression
+      }} />
+      """
+    )
+  end
 end
