@@ -26,7 +26,7 @@ defmodule Surface.Code.Formatter do
   Context of a section of whitespace. This allows the formatter to decide things
   such as how much indentation to provide after a newline.
   """
-  @type whitespace_context :: :before_child | :before_closing_tag | :before_whitespace
+  @type whitespace_context :: :before_child | :before_closing_tag | :before_whitespace | :indent
 
   @typedoc """
   A node output by `&Surface.Code.Formatter.parse/1`.
@@ -52,9 +52,13 @@ defmodule Surface.Code.Formatter do
       |> String.trim()
       |> Surface.Compiler.Parser.parse()
 
-    parsed_by_surface
-    |> Enum.flat_map(&parse_whitespace/1)
-    |> contextualize_whitespace()
+    parsed =
+      parsed_by_surface
+      |> Enum.flat_map(&parse_whitespace/1)
+      |> contextualize_whitespace()
+
+    # Add initial indentation
+    [{:whitespace, :indent} | parsed]
   end
 
   @doc "Given a list of surface nodes, return a formatted string of H-sigil code"
@@ -63,7 +67,7 @@ defmodule Surface.Code.Formatter do
     opts = Keyword.put_new(opts, :indent, 0)
 
     nodes
-    |> Enum.map(&render(&1, opts))
+    |> Enum.map(&render_node(&1, opts))
     |> List.flatten()
     # Add final newline
     |> Kernel.++(["\n"])
@@ -231,10 +235,10 @@ defmodule Surface.Code.Formatter do
   end
 
   # Take a formatter_node and return a formatted string
-  @spec render(formatter_node, list(option)) :: String.t() | nil
-  defp render(segment, opts)
+  @spec render_node(formatter_node, list(option)) :: String.t() | nil
+  defp render_node(segment, opts)
 
-  defp render({:interpolation, expression, _meta}, opts) do
+  defp render_node({:interpolation, expression, _meta}, opts) do
     formatted =
       expression
       |> String.trim()
@@ -247,25 +251,29 @@ defmodule Surface.Code.Formatter do
     )
   end
 
-  defp render({:whitespace, :before_whitespace}, _opts) do
+  defp render_node({:whitespace, :indent}, opts) do
+    String.duplicate(@tab, opts[:indent])
+  end
+
+  defp render_node({:whitespace, :before_whitespace}, _opts) do
     # There are multiple newlines in a row; don't add spaces
     # if there aren't going to be other characters after it
     "\n"
   end
 
-  defp render({:whitespace, :before_child}, opts) do
+  defp render_node({:whitespace, :before_child}, opts) do
     "\n#{String.duplicate(@tab, opts[:indent])}"
   end
 
-  defp render({:whitespace, :before_closing_tag}, opts) do
+  defp render_node({:whitespace, :before_closing_tag}, opts) do
     "\n#{String.duplicate(@tab, max(opts[:indent] - 1, 0))}"
   end
 
-  defp render(html, _opts) when is_binary(html) do
+  defp render_node(html, _opts) when is_binary(html) do
     html
   end
 
-  defp render({tag, attributes, children, _meta}, opts) do
+  defp render_node({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])
     rendered_attributes = Enum.map(attributes, &render_attribute/1)
@@ -385,7 +393,7 @@ defmodule Surface.Code.Formatter do
       else
         next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
 
-        Enum.map(children, &render(&1, next_opts))
+        Enum.map(children, &render_node(&1, next_opts))
       end
 
     if self_closing do
@@ -399,7 +407,7 @@ defmodule Surface.Code.Formatter do
           String.t() | {:do_not_indent_newlines, String.t()}
   defp render_attribute({name, value, _meta}) when is_binary(value) do
     # This is a string, and it might contain newlines. By returning
-    # `{:do_not_indent_newlines, formatted}` we instruct `render/1`
+    # `{:do_not_indent_newlines, formatted}` we instruct `render_node/1`
     # to leave newlines alone instead of adding extra tabs at the
     # beginning of the line.
     #

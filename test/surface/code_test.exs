@@ -2,7 +2,6 @@ defmodule Surface.CodeTest do
   use ExUnit.Case
 
   def test_formatter(input_code, expected_formatted_result, opts \\ []) do
-    expected_formatted_result = "\n" <> expected_formatted_result
     assert Surface.Code.format_string!(input_code, opts) == expected_formatted_result
   end
 
@@ -641,6 +640,22 @@ defmodule Surface.CodeTest do
       """
       {{ # Foo }}
       """
+    )
+  end
+
+  test "indent option" do
+    test_formatter(
+      """
+      <p> <span> Indented </span> </p>
+      """,
+      """
+            <p>
+              <span>
+                Indented
+              </span>
+            </p>
+      """,
+      indent: 3
     )
   end
 end
