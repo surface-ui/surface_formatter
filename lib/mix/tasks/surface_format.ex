@@ -17,7 +17,7 @@ defmodule Mix.Tasks.SurfaceFormat do
 
   defp format_file_contents!(file, input, opts) do
     case Path.extname(file) do
-      "sface" ->
+      ".sface" ->
         Surface.Code.format_string!(input, opts)
 
       _ ->
