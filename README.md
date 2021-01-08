@@ -344,3 +344,14 @@ are desired.
 The Elixir formatter will crash if you add `.sface` files to your `inputs` patterns
 in `.formatter.exs`. If you're using `.sface` files, use `surface_inputs` in
 `formatter.exs` to specify patterns for your files containing Surface code.
+
+```elixir
+# Example .formatter.exs
+[
+  surface_line_length: 120,
+  import_deps: [:ecto, :phoenix, :surface],
+  inputs: ["*.{ex,exs}", "priv/*/seeds.exs", "{config,lib,test}/**/*.{ex,exs}"],
+  surface_inputs: ["{lib,test}/**/*.{ex,sface}"],
+  subdirectories: ["priv/*/migrations"]
+]
+```
