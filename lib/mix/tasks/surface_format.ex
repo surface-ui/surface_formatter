@@ -7,6 +7,13 @@ defmodule Mix.Tasks.SurfaceFormat do
       mix surface_format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
   Takes the same options as `mix format` except for `--check-equivalent`.
+
+  ## .formatter.exs options
+
+    - `surface_line_length` overrides `line_length` only for `mix surface_format`
+      (`line_length` is used otherwise, or defaults to 98)
+    - `surface_inputs` overrides `inputs` only for `mix surface_format`
+      (`inputs` is used otherwise)
   """
 
   use Mix.Task
@@ -252,7 +259,7 @@ defmodule Mix.Tasks.SurfaceFormat do
     if no_entries_in_formatter_opts?(formatter_opts_and_subs) do
       Mix.raise(
         "Expected one or more files/patterns to be given to mix format " <>
-          "or for a .formatter.exs file to exist with an :inputs or :subdirectories key"
+          "or for a .formatter.exs file to exist with an :inputs, :surface_inputs or :subdirectories key"
       )
     end
 
@@ -287,11 +294,11 @@ defmodule Mix.Tasks.SurfaceFormat do
 
   defp expand_dot_inputs(dot_formatter, prefix, {formatter_opts, subs}, acc) do
     if no_entries_in_formatter_opts?({formatter_opts, subs}) do
-      Mix.raise("Expected :inputs or :subdirectories key in #{dot_formatter}")
+      Mix.raise("Expected :inputs, :surface_inputs or :subdirectories key in #{dot_formatter}")
     end
 
     map =
-      for input <- List.wrap(formatter_opts[:inputs]),
+      for input <- List.wrap(formatter_opts[:surface_inputs] || formatter_opts[:inputs]),
           file <- Path.wildcard(Path.join(prefix ++ [input]), match_dot: true),
           do: {expand_relative_to_cwd(file), {dot_formatter, formatter_opts}},
           into: %{}
@@ -300,9 +307,9 @@ defmodule Mix.Tasks.SurfaceFormat do
       Map.merge(acc, map, fn file, {dot_formatter1, _}, {dot_formatter2, formatter_opts} ->
         Mix.shell().error(
           "Both #{dot_formatter1} and #{dot_formatter2} specify the file " <>
-            "#{Path.relative_to_cwd(file)} in their :inputs option. To resolve the " <>
+            "#{Path.relative_to_cwd(file)} in their :inputs or :surface_inputs option. To resolve the " <>
             "conflict, the configuration in #{dot_formatter1} will be ignored. " <>
-            "Please change the list of :inputs in one of the formatter files so only " <>
+            "Please change the list of :inputs (or :surface_inputs) in one of the formatter files so only " <>
             "one of them matches #{Path.relative_to_cwd(file)}"
         )
 
@@ -334,7 +341,7 @@ defmodule Mix.Tasks.SurfaceFormat do
   defp stdin_or_wildcard(path), do: path |> Path.expand() |> Path.wildcard(match_dot: true)
 
   defp no_entries_in_formatter_opts?({formatter_opts, subs}) do
-    is_nil(formatter_opts[:inputs]) and subs == []
+    is_nil(formatter_opts[:inputs]) and is_nil(formatter_opts[:surface_inputs]) and subs == []
   end
 
   defp write_or_print(file, input, output) do

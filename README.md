@@ -9,7 +9,7 @@ Add as a dependency in `mix.exs`:
 ```elixir
 defp deps do
   [
-    {:surface_formatter, git: "https://github.com/paulstatezny/surface-formatter.git", tag: "0.3.3"}
+    {:surface_formatter, git: "https://github.com/paulstatezny/surface-formatter.git", tag: "0.4.0"}
   ]
 end
 ```
@@ -320,3 +320,9 @@ As with all changes (for both `mix format` and `mix surface_format`) it's
 recommended that developers don't blindly run the formatter on an entire
 codebase and commit, but instead sanity check each file to ensure the results
 are desired.
+
+## Formatting `.sface` files
+
+The Elixir formatter will crash if you add `.sface` files to your `inputs` patterns
+in `.formatter.exs`. If you're using `.sface` files, use `surface_inputs` in
+`formatter.exs` to specify patterns for your files containing Surface code.
