@@ -22,7 +22,7 @@ $ mix surface_format
 
 ## Features
 
-Most of the options from `mix format` are available. See the [document for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
+Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
 
 ```
 $ mix surface_format --check-formatted
