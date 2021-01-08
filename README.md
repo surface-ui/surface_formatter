@@ -22,8 +22,26 @@ $ mix surface_format
 
 ## Features
 
-You can use the same syntax as `mix format` for specifying which files to
-format. Example:
+Most of the options from `mix format` are available. See the [document for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
+
+```
+$ mix surface_format --check-formatted
+** (Mix) mix surface_format failed due to --check-formatted.
+The following files are not formatted:
+  * path/to/component.ex
+  * path/to/file.sface
+```
+
+```
+$ mix surface_format --dry-run
+```
+
+```
+$ mix surface_format --dot-formatter path/to/.formatter.exs
+```
+
+You can also use the same syntax as `mix format` for specifying which files to
+format:
 
 ```
 $ mix surface_format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
