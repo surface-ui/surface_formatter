@@ -52,7 +52,7 @@ defmodule Surface.Code.Formatter do
       |> String.trim()
       |> Surface.Compiler.Parser.parse()
 
-    ["\n" | parsed_by_surface]
+    parsed_by_surface
     |> Enum.flat_map(&parse_whitespace/1)
     |> contextualize_whitespace()
   end
