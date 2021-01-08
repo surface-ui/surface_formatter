@@ -6,7 +6,7 @@ defmodule Mix.Tasks.SurfaceFormat do
 
       mix surface_format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
-  Takes the same options as `mix format`.
+  Takes the same options as `mix format` except for `--check-equivalent`.
   """
 
   use Mix.Task
@@ -47,8 +47,8 @@ defmodule Mix.Tasks.SurfaceFormat do
   # The below functions are taken directly from Mix.Tasks.Format with only slight modification
   #
 
+  # TODO: Add support for `check_equivalent: :boolean` here
   @switches [
-    check_equivalent: :boolean,
     check_formatted: :boolean,
     dot_formatter: :string,
     dry_run: :boolean
@@ -397,7 +397,7 @@ defmodule Mix.Tasks.SurfaceFormat do
   end
 
   defp equivalent?(input, output) do
-    # FIXME: Implement this
-    true
+    # TODO: Implement this
+    input == output
   end
 end
