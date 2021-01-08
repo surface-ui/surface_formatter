@@ -11,6 +11,42 @@ defmodule Mix.Tasks.SurfaceFormat do
 
   use Mix.Task
 
+  #
+  # Functions unique to surface_format (Everything else is taken from Mix.Tasks.Format)
+  #
+
+  defp format_file_contents!(file, input, opts) do
+    case Path.extname(file) do
+      "sface" ->
+        Surface.Code.format_string!(input, opts)
+
+      _ ->
+        format_ex_string!(input, opts)
+    end
+  end
+
+  defp format_ex_string!(input, opts) do
+    ~r/\n( *)~H"""(.*?)"""/s
+    |> Regex.replace(input, fn _match, indentation, surface_code ->
+      # Indent the entire ~H sigil contents based on the indentation of `~H"""`
+      tabs =
+        indentation
+        |> String.length()
+        |> Kernel.div(2)
+
+      opts = Keyword.put(opts, :indent, tabs)
+
+      "\n#{indentation}~H\"\"\"#{
+        surface_code
+        |> Surface.Code.format_string!(opts)
+      }#{indentation}\"\"\""
+    end)
+  end
+
+  #
+  # The below functions are taken directly from Mix.Tasks.Format with only slight modification
+  #
+
   @switches [
     check_equivalent: :boolean,
     check_formatted: :boolean,
@@ -33,45 +69,35 @@ defmodule Mix.Tasks.SurfaceFormat do
     |> expand_args(dot_formatter, formatter_opts_and_subs)
     |> Task.async_stream(&format_file(&1, opts), ordered: false, timeout: 30000)
     |> Enum.reduce({[], [], []}, &collect_status/2)
+    |> check!()
   end
 
-  @regex ~r/\n( *)~H"""(.*?)"""/s
-  defp format_file({file, formatter_opts}, _task_opts) do
+  defp format_file({file, formatter_opts}, task_opts) do
     {input, extra_opts} = read_file(file)
-    ignore_file = String.match?(input, ~r/#\s*surface_format:disable-for-this-file/)
+    formatted = format_file_contents!(file, input, extra_opts ++ formatter_opts)
+    output = IO.iodata_to_binary([formatted])
 
-    if String.match?(input, @regex) and not ignore_file do
-      output =
-        @regex
-        |> Regex.replace(input, fn _match, indentation, surface_code ->
-          tabs =
-            indentation
-            |> String.length()
-            |> Kernel.div(2)
+    check_equivalent? = Keyword.get(task_opts, :check_equivalent, false)
+    check_formatted? = Keyword.get(task_opts, :check_formatted, false)
+    dry_run? = Keyword.get(task_opts, :dry_run, false)
 
-          opts = Keyword.put(formatter_opts ++ extra_opts, :indent, tabs)
+    cond do
+      check_equivalent? and not equivalent?(input, output) ->
+        {:not_equivalent, file}
 
-          "\n#{indentation}~H\"\"\"#{
-            surface_code
-            |> Surface.Code.format_string!(opts)
-          }#{indentation}\"\"\""
-        end)
+      check_formatted? ->
+        if input == output, do: :ok, else: {:not_formatted, file}
 
-      output = IO.iodata_to_binary([output])
-      write_or_print(file, input, output)
-      :ok
-    else
-      :ok
+      dry_run? ->
+        :ok
+
+      true ->
+        write_or_print(file, input, output)
     end
   rescue
     exception ->
-      IO.inspect(exception, label: "exception formatting #{file}")
       {:exit, file, exception, __STACKTRACE__}
   end
-
-  #
-  # The below functions are taken directly from Mix.Tasks.Format with no modification
-  #
 
   # This function reads exported configuration from the imported
   # dependencies and subdirectories and deals with caching the result
@@ -333,5 +359,45 @@ defmodule Mix.Tasks.SurfaceFormat do
 
   defp collect_status({:ok, {:not_formatted, file}}, {exits, not_equivalent, not_formatted}) do
     {exits, not_equivalent, [file | not_formatted]}
+  end
+
+  defp check!({[], [], []}) do
+    :ok
+  end
+
+  defp check!({[{:exit, :stdin, exception, stacktrace} | _], _not_equivalent, _not_formatted}) do
+    Mix.shell().error("mix surface_format failed for stdin")
+    reraise exception, stacktrace
+  end
+
+  defp check!({[{:exit, file, exception, stacktrace} | _], _not_equivalent, _not_formatted}) do
+    Mix.shell().error("mix surface_format failed for file: #{Path.relative_to_cwd(file)}")
+    reraise exception, stacktrace
+  end
+
+  defp check!({_exits, [_ | _] = not_equivalent, _not_formatted}) do
+    Mix.raise("""
+    mix surface_format failed due to --check-equivalent.
+    The following files are not equivalent:
+    #{to_bullet_list(not_equivalent)}
+    Please report this bug with the input files at https://github.com/paulstatezny/surface_format/issues
+    """)
+  end
+
+  defp check!({_exits, _not_equivalent, [_ | _] = not_formatted}) do
+    Mix.raise("""
+    mix surface_format failed due to --check-formatted.
+    The following files are not formatted:
+    #{to_bullet_list(not_formatted)}
+    """)
+  end
+
+  defp to_bullet_list(files) do
+    Enum.map_join(files, "\n", &"  * #{&1 |> to_string() |> Path.relative_to_cwd()}")
+  end
+
+  defp equivalent?(input, output) do
+    # FIXME: Implement this
+    true
   end
 end
