@@ -1,6 +1,6 @@
 # SurfaceFormatter
 
-An experimental formatter for https://github.com/msaraiva/surface.
+A code formatter for https://hex.pm/packages/surface
 
 ## Installation
 
@@ -9,14 +9,14 @@ Add as a dependency in `mix.exs`:
 ```elixir
 defp deps do
   [
-    {:surface_formatter, git: "https://github.com/paulstatezny/surface-formatter.git", tag: "0.4.0"}
+    {:surface_formatter, "~> 0.1.0"}
   ]
 end
 ```
 
 ## Usage
 
-```
+```bash
 $ mix surface_format
 ```
 
@@ -24,7 +24,7 @@ $ mix surface_format
 
 Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
 
-```
+```bash
 $ mix surface_format --check-formatted
 ** (Mix) mix surface_format failed due to --check-formatted.
 The following files are not formatted:
@@ -32,18 +32,18 @@ The following files are not formatted:
   * path/to/file.sface
 ```
 
-```
+```bash
 $ mix surface_format --dry-run
 ```
 
-```
+```bash
 $ mix surface_format --dot-formatter path/to/.formatter.exs
 ```
 
 You can also use the same syntax as `mix format` for specifying which files to
 format:
 
-```
+```bash
 $ mix surface_format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 ```
 
@@ -62,8 +62,9 @@ their parent.
 
 #### Whitespace that exists
 
-As in regular HTML, any amount of whitespace is considered equivalent. There
-are three exceptions:
+As in regular HTML, any string of continuous whitespace is considered
+equivalent to any other string of continuous whitespace. There are three
+exceptions:
 
 1. Macro components (with names starting with `#`, such as `<#Markdown>`)
 2. `<pre>` tags
@@ -141,7 +142,7 @@ will be formatted as
 #### Newline characters
 
 The formatter will not add extra newlines unprompted beyond moving nodes onto
-their own line.  However, if the input code has extra newlines, the formatted
+their own line.  However, if the input code has extra newlines, the formatter
 will retain them but will collapse more than one extra newline into a single
 one.
 
@@ -202,7 +203,7 @@ make use of Surface features.
 #### Inline literals
 
 String, integer, and boolean literals are placed after the `=` without any
-interpolation (`{{ }}`) brackets. This means that
+interpolation brackets (`{{ }}`). This means that
 
 ```html
 <Component foo={{ "hello" }} bar={{123}} secure={{   false }} />
@@ -246,7 +247,7 @@ This means that:
   - `things={{  %{one: "1", two: "2"}}}` becomes `things={{ %{ one: "1", two: "2" } }}`
 
 Sometimes the Elixir code formatter will add line breaks in the formatted
-expression. In that case, the formatter will ensure indentation lines up. If
+expression. In that case, SurfaceFormatter will ensure indentation lines up. If
 there is a single attribute, it will keep the attribute on the same line as the
 tag name, for example:
 
@@ -269,9 +270,10 @@ However, if there are multiple attributes it will put them on separate lines:
 />
 ```
 
-Also note above that if the Elixir code formatter introduces newlines,
-whitespace between the expression and the interpolation brackets is collapsed.
-That is to say the formatter will emit `list={{[` instead of `list={{ [`.
+Note in the above example that if the Elixir code formatter introduces
+newlines, whitespace between the expression and the interpolation brackets is
+collapsed.  That is to say the formatter will emit `list={{[` instead of
+`list={{ [`.
 
 #### Wrapping attributes on separate lines
 
@@ -296,9 +298,11 @@ for readability:
 
 If you desire to have a separate line length for `mix format` and `mix surface_format`,
 provide `surface_line_length` in `.formatter.exs` and it will be given precedence
-for `mix surface_format`. For example:
+when running `mix surface_format`. For example:
 
 ```elixir
+# .formatter.exs
+
 [
   surface_line_length: 120,
   import_deps: [...],
