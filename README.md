@@ -31,7 +31,7 @@ The formatter mostly follows these basic rules. See [Formatting Behaviors](#form
 - Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
 - Collapses extra newlines down to at most one blank line.
 
-## Features
+## Mix Task Features
 
 Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
 
