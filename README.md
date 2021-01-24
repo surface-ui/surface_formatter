@@ -20,6 +20,17 @@ end
 $ mix surface_format
 ```
 
+## Formatting Rules
+
+The formatter mostly follows these basic rules. See [Formatting Behaviors](#formatting-behaviors) for a more thorough explanation.
+
+- Only formats code inside of `~H"""` blocks.
+- Child nodes are indented 2 spaces in from their parent.
+- Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the official Elixir formatter.
+- HTML attributes are put on separate lines if the line is too long.
+- Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
+- Collapses extra newlines down to at most one blank line.
+
 ## Features
 
 Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
@@ -47,7 +58,7 @@ format:
 $ mix surface_format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 ```
 
-## Behavior
+## Formatting Behaviors
 
 The formatter attempts to strike a similar balance to `mix format`.
 
