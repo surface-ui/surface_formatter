@@ -10,6 +10,7 @@ defmodule SurfaceFormatter.MixProject do
       version: @version,
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps(),
 
       # Hex
@@ -52,5 +53,15 @@ defmodule SurfaceFormatter.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url}
     }
+  end
+
+  defp aliases do
+    [
+      ci: [
+        "format --check-formatted",
+        "compile --force --warnings-as-errors",
+        "cmd MIX_ENV=test mix test"
+      ]
+    ]
   end
 end
