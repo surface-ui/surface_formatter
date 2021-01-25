@@ -34,7 +34,7 @@ defmodule SurfaceFormatter.MixProject do
   defp deps do
     [
       {:surface, "~> 0.1.1"},
-      {:ex_doc, ">= 0.19.0", only: :docs}
+      {:ex_doc, ">= 0.19.0", only: [:dev, :docs], runtime: false}
     ]
   end
 
