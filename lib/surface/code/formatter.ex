@@ -14,7 +14,16 @@ defmodule Surface.Code.Formatter do
   """
   @type tag :: String.t()
 
-  @type attribute :: term
+  @typedoc "The value of a parsed HTML/Component attribute"
+  @type attribute_value ::
+          integer
+          | boolean
+          | String.t()
+          | {:attribute_expr, interpolated_expression :: String.t(), term}
+          | [String.t()]
+
+  @typedoc "A parsed HTML/Component attribute name and value"
+  @type attribute :: {name :: String.t(), attribute_value, term}
 
   @typedoc "A node output by `Surface.Compiler.Parser.parse/1`"
   @type surface_node ::
