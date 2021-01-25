@@ -6,7 +6,7 @@
 
 A code formatter for https://hex.pm/packages/surface
 
-The complete documentation for SurfaceFormatter is located [https://hexdocs.pm/surface_formatter/](here).
+The complete documentation for SurfaceFormatter is located [here](https://hexdocs.pm/surface_formatter/).
 
 ## Installation
 
