@@ -9,11 +9,16 @@ defmodule SurfaceFormatter.MixProject do
       app: :surface_formatter,
       version: @version,
       elixir: "~> 1.8",
-      description: "A code formatter for Surface, the component based library for Phoenix LiveView",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs(),
-      package: package()
+
+      # Hex
+      description: "A code formatter for Surface, the component based library for Phoenix LiveView",
+      package: package(),
+
+      # Docs
+      name: "SurfaceFormatter",
+      docs: docs()
     ]
   end
 

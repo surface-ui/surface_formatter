@@ -1,6 +1,6 @@
 defmodule Surface.Code.Formatter do
   @moduledoc """
-  Houses code to format Surface code snippets. (In the form of strings.)
+  Functions for formatting Surface code snippets.
   """
 
   # Use 2 spaces for a tab
@@ -16,7 +16,7 @@ defmodule Surface.Code.Formatter do
 
   @type attribute :: term
 
-  @typedoc "A node output by `&Surface.Compiler.Parser.parse/1`"
+  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`"
   @type surface_node ::
           String.t()
           | {:interpolation, String.t(), map}
@@ -29,9 +29,9 @@ defmodule Surface.Code.Formatter do
   @type whitespace_context :: :before_child | :before_closing_tag | :before_whitespace | :indent
 
   @typedoc """
-  A node output by `&Surface.Code.Formatter.parse/1`.
-  Simply a transformation of the output of `&Surface.Compiler.Parser.parse/1`,
-  with contextualized whitespace nodes parsed out of the string nodes.
+  A node output by `parse/1`. Simply a transformation of the output of
+  `parse/1`, with contextualized whitespace nodes parsed out of the string
+  nodes.
   """
   @type formatter_node :: surface_node | {:whitespace, whitespace_context}
 
@@ -61,7 +61,7 @@ defmodule Surface.Code.Formatter do
     [{:whitespace, :indent} | parsed]
   end
 
-  @doc "Given a list of surface nodes, return a formatted string of H-sigil code"
+  @doc "Given a list of `t:formatter_node/0`, return a formatted string of H-sigil code"
   @spec format(list(formatter_node), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
     opts = Keyword.put_new(opts, :indent, 0)
@@ -75,12 +75,8 @@ defmodule Surface.Code.Formatter do
   end
 
   @doc """
-  Deeply traverse parsed Surface nodes, converting string nodes
-  into this format: `{:string, String.t, %{spaces: [String.t, String.t]}}`
-
-  `spaces` is the whitespace before and after the node. Possible values
-  are `" "` and `""`. `" "` (a space character) means there is whitespace.
-  `""` (empty string) means there isn't.
+  Deeply traverse parsed Surface nodes, converting string nodes into a list of
+  strings and `:whitespace` atoms.
   """
   @spec parse_whitespace(surface_node) :: list(surface_node | :whitespace)
   def parse_whitespace(html) when is_binary(html) do

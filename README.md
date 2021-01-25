@@ -20,52 +20,33 @@ end
 $ mix surface.format
 ```
 
+See `mix surface.format` for documentation of flags and configuration options.
+
 ## Formatting Rules
 
-The formatter mostly follows these basic rules. See [Formatting Behaviors](#formatting-behaviors) for a more thorough explanation.
+The formatter mostly follows these basic rules.
 
 - Only formats code inside of `~H"""` blocks.
 - Child nodes are indented 2 spaces in from their parent.
-- Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the official Elixir formatter.
+- Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the
+  [official Elixir formatter](https://hexdocs.pm/elixir/Code.html#format_string!/2).
 - HTML attributes are put on separate lines if the line is too long.
 - Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
 - Collapses extra newlines down to at most one blank line.
 
-## Mix Task Features
-
-Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
-
-```bash
-$ mix surface.format --check-formatted
-** (Mix) mix surface.format failed due to --check-formatted.
-The following files are not formatted:
-  * path/to/component.ex
-  * path/to/file.sface
-```
-
-```bash
-$ mix surface.format --dry-run
-```
-
-```bash
-$ mix surface.format --dot-formatter path/to/.formatter.exs
-```
-
-You can also use the same syntax as `mix format` for specifying which files to
-format:
-
-```bash
-$ mix surface.format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
-```
+The documentation for `Surface.Code.format_string!/2` gives a more thorough
+explanation of the behaviors exhibited by the formatter.
 
 ## Formatting `.sface` files
 
-The Elixir formatter will crash if you add `.sface` files to your `inputs` patterns
-in `.formatter.exs`. If you're using `.sface` files, use `surface_inputs` in
-`formatter.exs` to specify patterns for your files containing Surface code.
+If your project includes `.sface` files, use the `:surface_inputs` option (instead of `:inputs`) in
+`.formatter.exs` to specify patterns for files containing Surface code.
+
+Without `:surface_inputs`, the formatter falls back to `:inputs`.
+Including `.sface` files in `:inputs` causes `mix format` to crash.
 
 ```elixir
-# Example .formatter.exs
+# Example .formatter.exs preventing `mix format` from crashing on .sface files
 [
   surface_line_length: 120,
   import_deps: [:ecto, :phoenix, :surface],
