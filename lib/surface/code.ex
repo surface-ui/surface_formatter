@@ -13,6 +13,8 @@ defmodule Surface.Code do
     - Lack of whitespace is preserved, so that intended behaviors are not removed.
       (For example, `<span>Foo bar baz</span>` will not have newlines or spaces added.)
 
+  Below the **Options** section is a non-exhaustive list of behaviors of the formatter.
+
   ## Options
 
     * `:line_length` - the line length to aim for when formatting
@@ -20,20 +22,14 @@ defmodule Surface.Code do
     this value is used as reference but is not always enforced
     depending on the context.
 
-  ## Formatter Behaviors
-
-  The formatter attempts to strike a similar balance to `mix format`.
-
-  Here is a non-exhaustive list of behaviors of the formatter:
-
-  ### Indentation
+  ## Indentation
 
   The formatter ensures that children are indented one tab (two spaces) in from
   their parent.
 
-  ### Whitespace
+  ## Whitespace
 
-  #### Whitespace that exists
+  ### Whitespace that exists
 
   As in regular HTML, any string of continuous whitespace is considered
   equivalent to any other string of continuous whitespace. There are three
@@ -46,7 +42,7 @@ defmodule Surface.Code do
   The contents of those tags are considered whitespace-sensitive, and developers
   should sanity check after running the formatter.
 
-  #### Whitespace that doesn't exist (Lack of whitespace)
+  ### Whitespace that doesn't exist (Lack of whitespace)
 
   As is sometimes the case in HTML, _lack_ of whitespace is considered
   significant. Instead of attempting to determine which contexts matter, the
@@ -92,7 +88,7 @@ defmodule Surface.Code do
   because of the lack of whitespace in between the opening and closing `<p>` tags
   and their child content.
 
-  #### Splitting children onto separate lines
+  ### Splitting children onto separate lines
 
   If there is a not a _lack_ of whitespace that needs to be respected, the
   formatter puts separate nodes (e.g. HTML elements, interpolations `{{ ... }}`,
@@ -112,7 +108,7 @@ defmodule Surface.Code do
   </div>
   ```
 
-  #### Newline characters
+  ### Newline characters
 
   The formatter will not add extra newlines unprompted beyond moving nodes onto
   their own line.  However, if the input code has extra newlines, the formatter
@@ -168,12 +164,12 @@ defmodule Surface.Code do
   </section>
   ```
 
-  ### Attributes
+  ## Attributes
 
   HTML attributes such as `class` in `<p class="container">` are formatted to
   make use of Surface features.
 
-  #### Inline literals
+  ### Inline literals
 
   String, integer, and boolean literals are placed after the `=` without any
   interpolation brackets (`{{ }}`). This means that
@@ -208,7 +204,7 @@ defmodule Surface.Code do
   <Component secure />
   ```
 
-  #### Interpolation (`{{ }}` brackets)
+  ### Interpolation (`{{ }}` brackets)
 
   Attributes that interpolate Elixir code with `{{ }}` brackets are ran through
   the Elixir code formatter.
@@ -248,7 +244,7 @@ defmodule Surface.Code do
   collapsed.  That is to say the formatter will emit `list={{[` instead of
   `list={{ [`.
 
-  #### Wrapping attributes on separate lines
+  ### Wrapping attributes on separate lines
 
   In the **Interpolation (`{{ }}` brackets)** section we noted that attributes
   will each be put on their own line if there is more than one attribute and at
@@ -283,9 +279,12 @@ defmodule Surface.Code do
   ]
   ```
 
-  #### HTML Comments
+  ### HTML Comments
 
-  The formatter removes HTML comments. This means
+  The formatter removes HTML comments. This is because the Surface parser
+  (which SurfaceFormatter uses under the hood) does not expose them.
+
+  This means
 
   ```html
   <div>
