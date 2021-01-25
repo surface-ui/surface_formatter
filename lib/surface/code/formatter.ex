@@ -37,12 +37,12 @@ defmodule Surface.Code.Formatter do
 
   @typedoc """
     - `:line_length` - Maximum line length before wrapping opening tags
-    - `:indent` - Starting depth depending on the context of the ~H sigil
+    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
   """
   @type option :: {:line_length, integer} | {:indent, integer}
 
   @doc """
-  Given a string of H-sigil code, return a list of surface nodes including special
+  Given a string of Surface code, return a list of surface nodes including special
   whitespace nodes that enable formatting.
   """
   @spec parse(String.t()) :: list(formatter_node)
@@ -61,7 +61,7 @@ defmodule Surface.Code.Formatter do
     [{:whitespace, :indent} | parsed]
   end
 
-  @doc "Given a list of `t:formatter_node/0`, return a formatted string of H-sigil code"
+  @doc "Given a list of `t:formatter_node/0`, return a formatted string of Surface code"
   @spec format(list(formatter_node), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
     opts = Keyword.put_new(opts, :indent, 0)

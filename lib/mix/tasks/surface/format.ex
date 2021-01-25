@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Surface.Format do
-  @shortdoc "Formats Surface H-sigils in the given files/patterns"
+  @shortdoc "Formats Surface H-sigils and .sface files in the given files/patterns"
 
   @moduledoc """
   Formats Surface H-sigils in the given files and patterns.

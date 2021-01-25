@@ -2,7 +2,8 @@ defmodule Surface.Code do
   @moduledoc "Utilities for dealing with Surface code"
 
   @doc """
-  Formats the given Surface code string. (Typically the contents of an `~H` sigil.)
+  Formats the given Surface code string. (Typically the contents of an `~H`
+  sigil or `.sface` file.)
 
   In short:
 
