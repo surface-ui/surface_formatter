@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Surface.Format do
 
   ```bash
   $ mix surface.format --check-formatted
-  ** (Mix) mix surface_format failed due to --check-formatted.
+  ** (Mix) mix surface.format failed due to --check-formatted.
   The following files are not formatted:
     * path/to/component.ex
     * path/to/file.sface
@@ -58,7 +58,7 @@ defmodule Mix.Tasks.Surface.Format do
   use Mix.Task
 
   #
-  # Functions unique to surface_format (Everything else is taken from Mix.Tasks.Format)
+  # Functions unique to surface.format (Everything else is taken from Mix.Tasks.Format)
   #
 
   defp format_file_contents!(file, input, opts) do
@@ -419,27 +419,27 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp check!({[{:exit, :stdin, exception, stacktrace} | _], _not_equivalent, _not_formatted}) do
-    Mix.shell().error("mix surface_format failed for stdin")
+    Mix.shell().error("mix surface.format failed for stdin")
     reraise exception, stacktrace
   end
 
   defp check!({[{:exit, file, exception, stacktrace} | _], _not_equivalent, _not_formatted}) do
-    Mix.shell().error("mix surface_format failed for file: #{Path.relative_to_cwd(file)}")
+    Mix.shell().error("mix surface.format failed for file: #{Path.relative_to_cwd(file)}")
     reraise exception, stacktrace
   end
 
   defp check!({_exits, [_ | _] = not_equivalent, _not_formatted}) do
     Mix.raise("""
-    mix surface_format failed due to --check-equivalent.
+    mix surface.format failed due to --check-equivalent.
     The following files are not equivalent:
     #{to_bullet_list(not_equivalent)}
-    Please report this bug with the input files at https://github.com/paulstatezny/surface_format/issues
+    Please report this bug with the input files at https://github.com/surface-ui/surface_formatter/issues
     """)
   end
 
   defp check!({_exits, _not_equivalent, [_ | _] = not_formatted}) do
     Mix.raise("""
-    mix surface_format failed due to --check-formatted.
+    mix surface.format failed due to --check-formatted.
     The following files are not formatted:
     #{to_bullet_list(not_formatted)}
     """)
@@ -450,7 +450,6 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp equivalent?(input, output) do
-    # TODO: Implement this
     input == output
   end
 end

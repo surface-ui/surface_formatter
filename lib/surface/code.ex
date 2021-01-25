@@ -19,10 +19,6 @@ defmodule Surface.Code do
     this value is used as reference but is not always enforced
     depending on the context.
 
-    * `:surface_line_length` - an option to override `:line_length`
-    only for the Surface formatter, since `:line_length` is also
-    used by the Elixir formatter.
-
   ## Formatter Behaviors
 
   The formatter attempts to strike a similar balance to `mix format`.
@@ -272,9 +268,9 @@ defmodule Surface.Code do
   >
   ```
 
-  If you desire to have a separate line length for `mix format` and `mix surface_format`,
+  If you desire to have a separate line length for `mix format` and `mix surface.format`,
   provide `surface_line_length` in `.formatter.exs` and it will be given precedence
-  when running `mix surface_format`. For example:
+  when running `mix surface.format`. For example:
 
   ```elixir
   # .formatter.exs
@@ -314,7 +310,7 @@ defmodule Surface.Code do
   </div>
   ```
 
-  As with all changes (for both `mix format` and `mix surface_format`) it's
+  As with all changes (for both `mix format` and `mix surface.format`) it's
   recommended that developers don't blindly run the formatter on an entire
   codebase and commit, but instead sanity check each file to ensure the results
   are desired.

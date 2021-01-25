@@ -17,7 +17,7 @@ end
 ## Usage
 
 ```bash
-$ mix surface_format
+$ mix surface.format
 ```
 
 ## Formatting Rules
@@ -36,26 +36,26 @@ The formatter mostly follows these basic rules. See [Formatting Behaviors](#form
 Most of the options from `mix format` are available. See the [documentation for mix format](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
 
 ```bash
-$ mix surface_format --check-formatted
-** (Mix) mix surface_format failed due to --check-formatted.
+$ mix surface.format --check-formatted
+** (Mix) mix surface.format failed due to --check-formatted.
 The following files are not formatted:
   * path/to/component.ex
   * path/to/file.sface
 ```
 
 ```bash
-$ mix surface_format --dry-run
+$ mix surface.format --dry-run
 ```
 
 ```bash
-$ mix surface_format --dot-formatter path/to/.formatter.exs
+$ mix surface.format --dot-formatter path/to/.formatter.exs
 ```
 
 You can also use the same syntax as `mix format` for specifying which files to
 format:
 
 ```bash
-$ mix surface_format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+$ mix surface.format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 ```
 
 ## Formatting `.sface` files

@@ -35,7 +35,6 @@ defmodule SurfaceFormatter.MixProject do
   defp docs do
     [
       main: "readme",
-      name: "mix surface_format",
       source_ref: "v#{@version}",
       source_url: @source_url,
       extras: ["README.md"]
