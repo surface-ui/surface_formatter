@@ -1,19 +1,58 @@
-defmodule Mix.Tasks.SurfaceFormat do
+defmodule Mix.Tasks.Surface.Format do
   @shortdoc "Formats Surface H-sigils in the given files/patterns"
 
   @moduledoc """
   Formats Surface H-sigils in the given files and patterns.
 
-      mix surface_format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+      mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
   Takes the same options as `mix format` except for `--check-equivalent`.
 
-  ## .formatter.exs options
+  ## Formatting options
 
-    - `surface_line_length` overrides `line_length` only for `mix surface_format`
-      (`line_length` is used otherwise, or defaults to 98)
-    - `surface_inputs` overrides `inputs` only for `mix surface_format`
-      (`inputs` is used otherwise)
+  Like `mix format`, the Surface formatter reads a `.formatter.exs` file in the
+  current directory for formatter configuration. The Surface formatter accepts
+  the same options as `mix format`. Read more about the expected format of
+  `.formatter.exs` and the shared configuration options
+  [documented here](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-formatting-options).
+
+  The Surface formatter also takes the following two additional options
+  specified in `.formatter.exs`:
+
+    - `:surface_line_length` overrides `line_length` only for `mix surface.format`
+      (`:line_length` is used otherwise, or defaults to 98)
+    - `:surface_inputs` overrides `inputs` only for `mix surface.format`
+      (`:inputs` is used otherwise)
+
+  ## Task-specific options
+
+  The Surface formatter accepts the same task-specific options as `mix format`.
+  [Read documentation for the options documented here.](https://hexdocs.pm/mix/master/Mix.Tasks.Format.html#module-task-specific-options).
+
+  For quick reference, here are some examples of using these options:
+
+  ```bash
+  $ mix surface.format --check-formatted
+  ** (Mix) mix surface_format failed due to --check-formatted.
+  The following files are not formatted:
+    * path/to/component.ex
+    * path/to/file.sface
+  ```
+
+  ```bash
+  $ mix surface.format --dry-run
+  ```
+
+  ```bash
+  $ mix surface.format --dot-formatter path/to/.formatter.exs
+  ```
+
+  You can also use the same syntax as `mix format` for specifying which files to
+  format:
+
+  ```bash
+  $ mix surface.format path/to/file.ex "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+  ```
   """
 
   use Mix.Task
@@ -69,11 +108,18 @@ defmodule Mix.Tasks.SurfaceFormat do
     {opts, args} = OptionParser.parse!(args, strict: @switches)
     {dot_formatter, formatter_opts} = eval_dot_formatter(opts)
 
-    {formatter_opts_and_subs, _sources} =
+    {{formatter_opts, subdirectories}, _sources} =
       eval_deps_and_subdirectories(dot_formatter, [], formatter_opts, [dot_formatter])
 
+    # surface_line_length can be used to override the line_length option
+    formatter_opts = if line_length = formatter_opts[:surface_line_length] do
+      Keyword.put(formatter_opts, :line_length, line_length)
+    else
+      formatter_opts
+    end
+
     args
-    |> expand_args(dot_formatter, formatter_opts_and_subs)
+    |> expand_args(dot_formatter, {formatter_opts, subdirectories})
     |> Task.async_stream(&format_file(&1, opts), ordered: false, timeout: 30000)
     |> Enum.reduce({[], [], []}, &collect_status/2)
     |> check!()
