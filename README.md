@@ -1,6 +1,12 @@
 # SurfaceFormatter
 
+[![Build Status](https://github.com/surface-ui/surface_formatter/workflows/CI/badge.svg)](https://github.com/surface-ui/surface_formatter/actions?query=workflow%3A%22CI%22)
+[![hex.pm](https://img.shields.io/hexpm/v/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
+[![hex.pm](https://img.shields.io/hexpm/l/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
+
 A code formatter for https://hex.pm/packages/surface
+
+The complete documentation for SurfaceFormatter is located [https://hexdocs.pm/surface_formatter/](here).
 
 ## Installation
 
