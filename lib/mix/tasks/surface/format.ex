@@ -112,11 +112,12 @@ defmodule Mix.Tasks.Surface.Format do
       eval_deps_and_subdirectories(dot_formatter, [], formatter_opts, [dot_formatter])
 
     # surface_line_length can be used to override the line_length option
-    formatter_opts = if line_length = formatter_opts[:surface_line_length] do
-      Keyword.put(formatter_opts, :line_length, line_length)
-    else
-      formatter_opts
-    end
+    formatter_opts =
+      if line_length = formatter_opts[:surface_line_length] do
+        Keyword.put(formatter_opts, :line_length, line_length)
+      else
+        formatter_opts
+      end
 
     args
     |> expand_args(dot_formatter, {formatter_opts, subdirectories})

@@ -112,7 +112,7 @@ defmodule Surface.Code.Formatter do
         end
       ]
       |> List.flatten()
-      |> Enum.reject(& &1 in [nil, ""])
+      |> Enum.reject(&(&1 in [nil, ""]))
     end
   end
 
@@ -148,7 +148,7 @@ defmodule Surface.Code.Formatter do
   #
   # This helps us defer to the existing code formatting and retain (at most one)
   # extra newline in between nodes.
-  @spec collapse_whitespace(String.t) :: list(:whitespace)
+  @spec collapse_whitespace(String.t()) :: list(:whitespace)
   defp collapse_whitespace(whitespace_string) when is_binary(whitespace_string) do
     newlines =
       whitespace_string
@@ -211,7 +211,7 @@ defmodule Surface.Code.Formatter do
     children =
       children
       |> contextualize_whitespace()
-      |> Enum.chunk_by(& &1 == {:whitespace, :before_whitespace})
+      |> Enum.chunk_by(&(&1 == {:whitespace, :before_whitespace}))
       |> Enum.map(fn
         [{:whitespace, :before_whitespace} | _] ->
           # Here is where we actually deduplicate. We have a consecutive list of

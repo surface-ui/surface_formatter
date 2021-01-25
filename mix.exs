@@ -13,7 +13,8 @@ defmodule SurfaceFormatter.MixProject do
       deps: deps(),
 
       # Hex
-      description: "A code formatter for Surface, the component based library for Phoenix LiveView",
+      description:
+        "A code formatter for Surface, the component based library for Phoenix LiveView",
       package: package(),
 
       # Docs

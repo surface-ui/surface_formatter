@@ -316,7 +316,7 @@ defmodule Surface.Code do
   are desired.
 
   """
-  @spec format_string!(String.t(), list(Surface.Code.Formatter.option)) :: String.t()
+  @spec format_string!(String.t(), list(Surface.Code.Formatter.option())) :: String.t()
   def format_string!(string, opts \\ []) do
     string
     |> Surface.Code.Formatter.parse()
