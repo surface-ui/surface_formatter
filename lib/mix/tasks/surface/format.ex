@@ -19,9 +19,9 @@ defmodule Mix.Tasks.Surface.Format do
   The Surface formatter also takes the following two additional options
   specified in `.formatter.exs`:
 
-    - `:surface_line_length` overrides `line_length` only for `mix surface.format`
+    - `:surface_line_length` overrides `:line_length` only for `mix surface.format`
       (`:line_length` is used otherwise, or defaults to 98)
-    - `:surface_inputs` overrides `inputs` only for `mix surface.format`
+    - `:surface_inputs` overrides `:inputs` only for `mix surface.format`
       (`:inputs` is used otherwise)
 
   ## Task-specific options
