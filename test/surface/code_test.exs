@@ -241,7 +241,7 @@ defmodule Surface.CodeTest do
     )
   end
 
-  test "attribute wrapping can be configured by :line_length and :surface_line_length (which is given precedence) in opts" do
+  test "attribute wrapping can be configured by :line_length in opts" do
     test_formatter(
       """
       <Foo bar="bar" baz="baz"/>
@@ -253,21 +253,6 @@ defmodule Surface.CodeTest do
       />
       """,
       line_length: 20
-    )
-
-    test_formatter(
-      """
-      <Foo bar="bar" baz="baz"/>
-      """,
-      """
-      <Foo
-        bar="bar"
-        baz="baz"
-      />
-      """,
-      surface_line_length: 20,
-      # Demonstrate that surface_line_length is given precedence over line_length
-      line_length: 200
     )
   end
 
