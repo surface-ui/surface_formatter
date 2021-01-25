@@ -658,4 +658,52 @@ defmodule Surface.CodeTest do
       indent: 3
     )
   end
+
+  test "for docs" do
+    test_formatter(
+      """
+       <RootComponent with_many_attributes={{ true }} causing_this_line_to_wrap={{ true}} because_it_is_too_long={{ "yes, this line is long enough to wrap" }}>
+         <!-- An HTML comment -->
+         {{#An Elixir comment}}
+
+
+
+         <div :if={{@show_div}}
+         class="container">
+             <p> Text inside paragraph    </p>
+          <span>Text touching parent tags</span>
+         </div>
+
+      <Child  items={{[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}}>
+        Default slot contents
+      </Child>
+      </RootComponent>
+      """,
+      """
+      <RootComponent
+        with_many_attributes
+        causing_this_line_to_wrap
+        because_it_is_too_long="yes, this line is long enough to wrap"
+      >
+        {{ # An Elixir comment }}
+
+        <div :if={{ @show_div }} class="container">
+          <p>
+            Text inside paragraph
+          </p>
+          <span>Text touching parent tags</span>
+        </div>
+
+        <Child items={{[
+          %{name: "Option 1", key: 1},
+          %{name: "Option 2", key: 2},
+          %{name: "Option 3", key: 3},
+          %{name: "Option 4", key: 4}
+        ]}}>
+          Default slot contents
+        </Child>
+      </RootComponent>
+      """
+    )
+  end
 end

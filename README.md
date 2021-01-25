@@ -22,9 +22,9 @@ $ mix surface.format
 
 See `mix surface.format` for documentation of flags and configuration options.
 
-## Formatting Rules
+## Formatting rules
 
-The formatter mostly follows these basic rules.
+The formatter mostly follows these rules:
 
 - Only formats code inside of `~H"""` blocks.
 - Child nodes are indented 2 spaces in from their parent.
@@ -34,8 +34,58 @@ The formatter mostly follows these basic rules.
 - Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
 - Collapses extra newlines down to at most one blank line.
 
-The documentation for `Surface.Code.format_string!/2` gives a more thorough
-explanation of the behaviors exhibited by the formatter.
+See `Surface.Code.format_string!/2` for further documentation.
+
+## Example at a glance
+
+Out of the box, Surface code that looks like this:
+
+```html
+ <RootComponent with_many_attributes={{ true }} causing_this_line_to_wrap={{ true}} because_it_is_too_long={{ "yes" }}>
+   <!-- An HTML comment -->
+   {{#An Elixir comment}}
+
+
+
+   <div :if={{@show_div}}
+   class="container">
+       <p> Text inside paragraph    </p>
+    <span>Text touching parent tags</span>
+   </div>
+
+<Child  items={{[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}}>
+  Contents
+</Child>
+</RootComponent>
+```
+
+will be formatted like this:
+
+```html
+<RootComponent
+  with_many_attributes
+  causing_this_line_to_wrap
+  because_it_is_too_long="yes, this line is long enough to wrap"
+>
+  {{ # An Elixir comment }}
+
+  <div :if={{ @show_div }} class="container">
+    <p>
+      Text inside paragraph
+    </p>
+    <span>Text touching parent tags</span>
+  </div>
+
+  <Child items={{[
+    %{name: "Option 1", key: 1},
+    %{name: "Option 2", key: 2},
+    %{name: "Option 3", key: 3},
+    %{name: "Option 4", key: 4}
+  ]}}>
+    Contents
+  </Child>
+</RootComponent>
+```
 
 ## Formatting `.sface` files
 
