@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Surface.Format do
   @shortdoc "Formats Surface H-sigils and .sface files in the given files/patterns"
 
   @moduledoc """
-  Formats Surface H-sigils in the given files and patterns.
+  Formats Surface `~H` sigils and `.sface` files in the given files and patterns.
 
       mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
