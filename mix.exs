@@ -44,14 +44,20 @@ defmodule SurfaceFormatter.MixProject do
       main: "readme",
       source_ref: "v#{@version}",
       source_url: @source_url,
-      extras: ["README.md"]
+      extras: [
+        "README.md",
+        "CHANGELOG.md"
+      ]
     ]
   end
 
   defp package do
     %{
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url}
+      links: %{
+        Changelog: @source_url <> "/blob/master/CHANGELOG.md",
+        GitHub: @source_url
+      }
     }
   end
 
