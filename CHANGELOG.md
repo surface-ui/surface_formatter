@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.0 (2021-01-28)
+
+  * Require Surface `v0.2.0` (#2)
+
 ## v0.1.1 (2021-01-28)
 
   * Fix crash for self-closing `<pre>`, `<code>`, and `<#Macro>` tags. (#1)
