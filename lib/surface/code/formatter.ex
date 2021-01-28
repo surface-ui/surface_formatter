@@ -393,8 +393,15 @@ defmodule Surface.Code.Formatter do
 
     rendered_children =
       if render_contents_verbatim?(tag) do
-        [contents] = children
-        contents
+        Enum.map(children, fn
+          html when is_binary(html) ->
+            # Render out string portions of <pre>/<code>/<#MacroComponent> children
+            # verbatim instead of trimming them.
+            html
+
+          child ->
+            render_node(child, indent: 0)
+        end)
       else
         next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
 
