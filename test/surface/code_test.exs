@@ -99,6 +99,17 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "Self closing Macro Components are preserved" do
+    test_formatter(
+      """
+      <#MacroComponent />
+      """,
+      """
+      <#MacroComponent />
+      """
+    )
+  end
+
   test "lack of whitespace is preserved" do
     test_formatter(
       """

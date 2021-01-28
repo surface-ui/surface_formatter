@@ -393,8 +393,7 @@ defmodule Surface.Code.Formatter do
 
     rendered_children =
       if render_contents_verbatim?(tag) do
-        [contents] = children
-        contents
+        Enum.join(children, "")
       else
         next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
 
