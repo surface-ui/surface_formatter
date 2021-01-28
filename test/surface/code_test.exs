@@ -380,7 +380,76 @@ defmodule Surface.CodeTest do
     )
   end
 
-  test "Fix bug in UCBI dev" do
+  test "<pre>, <code>, and <#MacroComponent> tags can contain interpolations or components, but the string portions are untouched" do
+    # Note that the output looks pretty messy, but it's because
+    # we're retaining 100% of the exact characters between the
+    # <pre> and </pre> tags, etc.
+    #
+    # Also, note that the _opening_ tags are consistently at the same
+    # indentation level because those tags are not inside a context
+    # in which we render children verbatim. (In other words, there's
+    # no risk of changing browser behavior.)
+    test_formatter(
+      """
+      <pre>
+      {{   @data   }}
+            <Component />
+      </pre>
+          <code>
+        {{ @data }}
+        <Component />
+          </code>
+
+
+            <#MacroComponent> Foo {{@bar}} baz </#MacroComponent>
+      """,
+      """
+      <pre>
+      {{ @data }}
+            <Component />
+      </pre>
+      <code>
+        {{ @data }}
+        <Component />
+          </code>
+
+      <#MacroComponent> Foo {{@bar}} baz </#MacroComponent>
+      """
+    )
+  end
+
+  test "HTML elements rendered in <pre>/<code>/<#MacroComponent> tags are left in their original state" do
+    test_formatter(
+      """
+      <pre>
+          <div>    <p>  Hello world  </p>  </div>
+        </pre>
+
+        <code>
+            <div>    <p>  Hello world  </p>  </div>
+          </code>
+
+          <#Macro>
+              <div>    <p>  Hello world  </p>  </div>
+            </#Macro>
+      """,
+      """
+      <pre>
+          <div>    <p>  Hello world  </p>  </div>
+        </pre>
+
+      <code>
+            <div>    <p>  Hello world  </p>  </div>
+          </code>
+
+      <#Macro>
+              <div>    <p>  Hello world  </p>  </div>
+            </#Macro>
+      """
+    )
+  end
+
+  test "Attributes are lines up properly when split onto newlines with a multi-line attribute" do
     test_formatter(
       """
       <Parent>
