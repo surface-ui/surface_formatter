@@ -35,7 +35,7 @@ defmodule Surface.Code.Formatter do
   Context of a section of whitespace. This allows the formatter to decide things
   such as how much indentation to provide after a newline.
   """
-  @type whitespace_context :: :before_child | :before_closing_tag | :before_whitespace | :indent
+  @type whitespace_context :: :before_node | :before_closing_tag | :before_whitespace | :indent
 
   @typedoc """
   A node output by `parse/1`. Simply a transformation of the output of
@@ -195,7 +195,7 @@ defmodule Surface.Code.Formatter do
   defp contextualize_whitespace([:whitespace | rest], accumulated) do
     contextualize_whitespace(
       rest,
-      accumulated ++ [{:whitespace, :before_child}]
+      accumulated ++ [{:whitespace, :before_node}]
     )
   end
 
@@ -266,7 +266,7 @@ defmodule Surface.Code.Formatter do
     "\n"
   end
 
-  defp render_node({:whitespace, :before_child}, opts) do
+  defp render_node({:whitespace, :before_node}, opts) do
     "\n#{String.duplicate(@tab, opts[:indent])}"
   end
 

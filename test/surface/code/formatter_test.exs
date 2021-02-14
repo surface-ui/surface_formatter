@@ -13,13 +13,13 @@ defmodule Surface.Code.FormatterTest do
                {:whitespace, :indent},
                {"div", [],
                 [
-                  {:whitespace, :before_child},
+                  {:whitespace, :before_node},
                   {"p", [],
                    [
-                     {:whitespace, :before_child},
+                     {:whitespace, :before_node},
                      "Hello",
                      {:whitespace, :before_whitespace},
-                     {:whitespace, :before_child},
+                     {:whitespace, :before_node},
                      "Goodbye",
                      {:whitespace, :before_closing_tag}
                    ], _},
