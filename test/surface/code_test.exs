@@ -724,6 +724,38 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "inline tags mixed with text are left on the same line unless max width is violated" do
+    test_formatter(
+      """
+      The <b>Dialog</b> is a stateless component. All event handlers
+      had to be defined in the parent <b>LiveView</b>.
+      """,
+      """
+      The <b>Dialog</b> is a stateless component. All event handlers
+      had to be defined in the parent <b>LiveView</b>.
+      """
+    )
+
+    test_formatter(
+      """
+      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
+      """,
+      """
+      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
+      """
+    )
+    test_formatter(
+      """
+      This <b>Dialog</b> is a stateful component. Cool!
+      """,
+      """
+      This <b>Dialog</b> is a stateful component. Cool!
+      """
+    )
+  end
+
   test "for docs" do
     test_formatter(
       """
