@@ -4,28 +4,103 @@ defmodule Surface.Code.FormatterTest do
   describe "parse/1" do
     test "adds context to whitespace" do
       surface_code = """
-      <div> <p> Hello
+      <div>  <p>     Hello
 
       Goodbye </p> </div>
       """
 
       assert [
-               {:whitespace, :indent},
+               :indent,
                {"div", [],
                 [
-                  {:whitespace, :before_node},
+                  :newline,
+                  :indent,
                   {"p", [],
                    [
-                     {:whitespace, :before_node},
+                     :newline,
+                     :indent,
                      "Hello",
-                     {:whitespace, :before_whitespace},
-                     {:whitespace, :before_node},
+                     :newline,
+                     :newline,
+                     :indent,
                      "Goodbye",
-                     {:whitespace, :before_closing_tag}
+                     :newline,
+                     :indent_one_less
                    ], _},
-                  {:whitespace, :before_closing_tag}
+                  :newline,
+                  :indent_one_less
                 ], _}
              ] = Surface.Code.Formatter.parse(surface_code)
+    end
+  end
+
+  describe "parse_whitespace/1" do
+    test "multiple spaces get boiled down to one" do
+      actual =
+        Surface.Code.Formatter.parse_whitespace(
+          """
+          Hi         Hello
+          """,
+          nil,
+          nil
+        )
+
+      assert actual == ["Hi         Hello", :newline]
+    end
+
+    test "correctly tags sections of leading/trailing whitespace in a string" do
+      actual =
+        Surface.Code.Formatter.parse_whitespace(
+          """
+
+
+
+          successive newlines
+
+
+
+          """,
+          nil,
+          nil
+        )
+
+      expected = [
+        :newline,
+        "successive newlines",
+        :newline
+      ]
+
+      assert actual == expected
+    end
+  end
+
+  describe "format/1" do
+    test "turns parsed/contextualized quoted Surface code into a string as expected" do
+      actual =
+        Surface.Code.Formatter.format([
+          {"Component", [],
+           [
+             :newline,
+             :indent,
+             "foo",
+             :newline,
+             :newline,
+             :indent,
+             "bar",
+             :newline,
+             :indent_one_less
+           ], %{line: 1, space: ""}}
+        ])
+
+      expected = """
+      <Component>
+        foo
+
+        bar
+      </Component>
+      """
+
+      assert actual == expected
     end
   end
 end

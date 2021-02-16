@@ -677,6 +677,27 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "multiple extra newlines between children are collapsed to one" do
+    test_formatter(
+      """
+      <Component>
+        foo
+
+
+
+        bar
+      </Component>
+      """,
+      """
+      <Component>
+        foo
+
+        bar
+      </Component>
+      """
+    )
+  end
+
   test "at most one blank newline is retained when an HTML comment exists" do
     test_formatter(
       ~S"""
@@ -711,7 +732,11 @@ defmodule Surface.CodeTest do
   test "indent option" do
     test_formatter(
       """
-      <p> <span> Indented </span> </p>
+      <p>
+      <span>
+      Indented
+      </span>
+      </p>
       """,
       """
             <p>
@@ -746,6 +771,7 @@ defmodule Surface.CodeTest do
       <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
       """
     )
+
     test_formatter(
       """
       This <b>Dialog</b> is a stateful component. Cool!
