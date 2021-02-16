@@ -135,13 +135,13 @@ defmodule Surface.Code.Formatter do
         if leading_whitespace = Regex.run(~r/^\s+/, text) do
           leading_whitespace
           |> List.first()
-          |> parse_only_whitespace("", "")
+          |> parse_only_whitespace(last, "")
         end,
         trimmed_html_segments,
         if trailing_whitespace = Regex.run(~r/\s+$/, text) do
           trailing_whitespace
           |> List.first()
-          |> parse_only_whitespace("", "")
+          |> parse_only_whitespace("", next)
         end
       ]
       |> List.flatten()

@@ -761,7 +761,9 @@ defmodule Surface.CodeTest do
         {{ # An Elixir comment }}
 
         <div :if={{ @show_div }} class="container">
-          <p> Text inside paragraph </p>
+          <p>
+            Text inside paragraph
+          </p>
           <span>Text touching parent tags</span>
         </div>
 

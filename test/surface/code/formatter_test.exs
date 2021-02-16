@@ -17,13 +17,15 @@ defmodule Surface.Code.FormatterTest do
                   :indent,
                   {"p", [],
                    [
-                     :space,
+                     :newline,
+                     :indent,
                      "Hello",
                      :newline,
                      :newline,
                      :indent,
                      "Goodbye",
-                     :space
+                     :newline,
+                     :indent_one_less
                    ], _},
                   :newline,
                   :indent_one_less
