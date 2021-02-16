@@ -99,6 +99,8 @@ defmodule Surface.Code.Formatter do
     |> Enum.join()
   end
 
+  # Recurses over nodes, feeding them to parse_whitespace/3 with the
+  # node immediately before and after for context.
   def parse_whitespace_for_nodes(nodes, parsed \\ [], last \\ nil)
 
   def parse_whitespace_for_nodes([], parsed, _last), do: parsed
