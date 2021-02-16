@@ -677,6 +677,27 @@ defmodule Surface.CodeTest do
     )
   end
 
+  test "multiple extra newlines between children are collapsed to one" do
+    test_formatter(
+      """
+      <Component>
+        foo
+
+
+
+        bar
+      </Component>
+      """,
+      """
+      <Component>
+        foo
+
+        bar
+      </Component>
+      """
+    )
+  end
+
   test "at most one blank newline is retained when an HTML comment exists" do
     test_formatter(
       ~S"""
@@ -711,7 +732,11 @@ defmodule Surface.CodeTest do
   test "indent option" do
     test_formatter(
       """
-      <p> <span> Indented </span> </p>
+      <p>
+      <span>
+      Indented
+      </span>
+      </p>
       """,
       """
             <p>
@@ -721,6 +746,39 @@ defmodule Surface.CodeTest do
             </p>
       """,
       indent: 3
+    )
+  end
+
+  test "inline tags mixed with text are left on the same line unless max width is violated" do
+    test_formatter(
+      """
+      The <b>Dialog</b> is a stateless component. All event handlers
+      had to be defined in the parent <b>LiveView</b>.
+      """,
+      """
+      The <b>Dialog</b> is a stateless component. All event handlers
+      had to be defined in the parent <b>LiveView</b>.
+      """
+    )
+
+    test_formatter(
+      """
+      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
+      """,
+      """
+      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
+      """
+    )
+
+    test_formatter(
+      """
+      This <b>Dialog</b> is a stateful component. Cool!
+      """,
+      """
+      This <b>Dialog</b> is a stateful component. Cool!
+      """
     )
   end
 
