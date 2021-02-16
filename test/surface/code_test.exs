@@ -5,6 +5,10 @@ defmodule Surface.CodeTest do
     assert Surface.Code.format_string!(input_code, opts) == expected_formatted_result
   end
 
+  def assert_code_doesnt_change(code, opts \\ []) do
+    test_formatter(code, code, opts)
+  end
+
   test "children are indented 1 from parents" do
     test_formatter(
       """
@@ -52,62 +56,33 @@ defmodule Surface.CodeTest do
   end
 
   test "Contents of Macro Components are preserved" do
-    test_formatter(
-      """
-      <#MacroComponent>
-      * One
-      * Two
-      ** Three
-      *** Four
-              **** Five
-        -- Once I caught a fish alive
-      </#MacroComponent>
-      """,
-      """
-      <#MacroComponent>
-      * One
-      * Two
-      ** Three
-      *** Four
-              **** Five
-        -- Once I caught a fish alive
-      </#MacroComponent>
-      """
-    )
+    assert_code_doesnt_change("""
+    <#MacroComponent>
+    * One
+    * Two
+    ** Three
+    *** Four
+            **** Five
+      -- Once I caught a fish alive
+    </#MacroComponent>
+    """)
 
-    test_formatter(
-      """
-      <#MacroComponent>
-       * One
-       * Two
-       ** Three
-       *** Four
-               **** Five
-         -- Once I caught a fish alive
-      </#MacroComponent>
-      """,
-      """
-      <#MacroComponent>
-       * One
-       * Two
-       ** Three
-       *** Four
-               **** Five
-         -- Once I caught a fish alive
-      </#MacroComponent>
-      """
-    )
+    assert_code_doesnt_change("""
+    <#MacroComponent>
+     * One
+     * Two
+     ** Three
+     *** Four
+             **** Five
+       -- Once I caught a fish alive
+    </#MacroComponent>
+    """)
   end
 
   test "Self closing Macro Components are preserved" do
-    test_formatter(
-      """
-      <#MacroComponent />
-      """,
-      """
-      <#MacroComponent />
-      """
-    )
+    assert_code_doesnt_change("""
+    <#MacroComponent />
+    """)
   end
 
   test "lack of whitespace is preserved" do
@@ -340,14 +315,9 @@ defmodule Surface.CodeTest do
   end
 
   test "(bugfix) a trailing interpolation does not get an extra newline added" do
-    test_formatter(
-      """
-      <p>Foo</p><p>Bar</p>{{ baz }}
-      """,
-      """
-      <p>Foo</p><p>Bar</p>{{ baz }}
-      """
-    )
+    assert_code_doesnt_change("""
+    <p>Foo</p><p>Bar</p>{{ baz }}
+    """)
   end
 
   test "Contents of <pre> and <code> tags aren't formatted" do
@@ -419,6 +389,9 @@ defmodule Surface.CodeTest do
   end
 
   test "HTML elements rendered in <pre>/<code>/<#MacroComponent> tags are left in their original state" do
+    # Note that the <code> and <#Macro> components (which are too indented)
+    # are brought all the way to the left side, but all of the whitespace
+    # characters therein are left alone.
     test_formatter(
       """
       <pre>
@@ -597,24 +570,14 @@ defmodule Surface.CodeTest do
   end
 
   test "existing whitespace in string attributes is not altered when there is only one attribute" do
-    test_formatter(
-      """
-      <foo>
-        <bar>
-          <baz qux="one
-          two"/>
-        </bar>
-      </foo>
-      """,
-      """
-      <foo>
-        <bar>
-          <baz qux="one
-          two" />
-        </bar>
-      </foo>
-      """
-    )
+    assert_code_doesnt_change("""
+    <foo>
+      <bar>
+        <baz qux="one
+        two" />
+      </bar>
+    </foo>
+    """)
   end
 
   test "attributes that are a list merged with a keyword list are formatted" do
@@ -659,22 +622,13 @@ defmodule Surface.CodeTest do
   end
 
   test "a single extra newline between children is retained" do
-    test_formatter(
-      """
-      <Component>
-        foo
+    assert_code_doesnt_change("""
+    <Component>
+      foo
 
-        bar
-      </Component>
-      """,
-      """
-      <Component>
-        foo
-
-        bar
-      </Component>
-      """
-    )
+      bar
+    </Component>
+    """)
   end
 
   test "multiple extra newlines between children are collapsed to one" do
@@ -750,36 +704,19 @@ defmodule Surface.CodeTest do
   end
 
   test "inline tags mixed with text are left on the same line unless max width is violated" do
-    test_formatter(
-      """
-      The <b>Dialog</b> is a stateless component. All event handlers
-      had to be defined in the parent <b>LiveView</b>.
-      """,
-      """
-      The <b>Dialog</b> is a stateless component. All event handlers
-      had to be defined in the parent <b>LiveView</b>.
-      """
-    )
+    assert_code_doesnt_change("""
+    The <b>Dialog</b> is a stateless component. All event handlers
+    had to be defined in the parent <b>LiveView</b>.
+    """)
 
-    test_formatter(
-      """
-      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
-      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
-      """,
-      """
-      <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
-      <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
-      """
-    )
+    assert_code_doesnt_change("""
+    <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+    <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
+    """)
 
-    test_formatter(
-      """
-      This <b>Dialog</b> is a stateful component. Cool!
-      """,
-      """
-      This <b>Dialog</b> is a stateful component. Cool!
-      """
-    )
+    assert_code_doesnt_change("""
+    This <b>Dialog</b> is a stateful component. Cool!
+    """)
   end
 
   test "for docs" do
