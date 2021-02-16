@@ -719,6 +719,19 @@ defmodule Surface.CodeTest do
     """)
   end
 
+  test "(bugfix) newlines aren't removed for no reason" do
+    assert_code_doesnt_change("""
+    <Test />
+
+    Example 1
+    <Test />
+
+    Example 2
+
+    <Test />
+    """)
+  end
+
   test "for docs" do
     test_formatter(
       """
@@ -748,9 +761,7 @@ defmodule Surface.CodeTest do
         {{ # An Elixir comment }}
 
         <div :if={{ @show_div }} class="container">
-          <p>
-            Text inside paragraph
-          </p>
+          <p> Text inside paragraph </p>
           <span>Text touching parent tags</span>
         </div>
 

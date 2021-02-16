@@ -17,15 +17,13 @@ defmodule Surface.Code.FormatterTest do
                   :indent,
                   {"p", [],
                    [
-                     :newline,
-                     :indent,
+                     :space,
                      "Hello",
                      :newline,
                      :newline,
                      :indent,
                      "Goodbye",
-                     :newline,
-                     :indent_one_less
+                     :space
                    ], _},
                   :newline,
                   :indent_one_less
@@ -66,7 +64,12 @@ defmodule Surface.Code.FormatterTest do
 
       expected = [
         :newline,
+        :newline,
+        :newline,
         "successive newlines",
+        :newline,
+        :newline,
+        :newline,
         :newline
       ]
 

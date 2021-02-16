@@ -121,22 +121,7 @@ defmodule Surface.Code.Formatter do
     trimmed_text = String.trim(text)
 
     if trimmed_text == "" do
-      # This span of text is _only_ whitespace
-      newlines =
-        text
-        |> String.graphemes()
-        |> Enum.count(&(&1 == "\n"))
-
-      if force_newline_separator_for?(last) or force_newline_separator_for?(next) do
-        # Force at least one newline
-        List.duplicate(:newline, max(newlines, 1))
-      else
-        if newlines > 0 do
-          List.duplicate(:newline, newlines)
-        else
-          [:space]
-        end
-      end
+      parse_only_whitespace(text, last, next)
     else
       trimmed_html_segments =
         trimmed_text
@@ -147,20 +132,16 @@ defmodule Surface.Code.Formatter do
         |> Enum.intersperse(:newline)
 
       [
-        if String.trim_leading(text) != text do
-          if String.match?(text, ~r/^\s*\n\s*/) or force_newline_separator_for?(last) do
-            :newline
-          else
-            :space
-          end
+        if leading_whitespace = Regex.run(~r/^\s+/, text) do
+          leading_whitespace
+          |> List.first()
+          |> parse_only_whitespace("", "")
         end,
         trimmed_html_segments,
-        if String.trim_trailing(text) != text do
-          if String.match?(text, ~r/\s*\n\s*$/) or force_newline_separator_for?(next) do
-            :newline
-          else
-            :space
-          end
+        if trailing_whitespace = Regex.run(~r/\s+$/, text) do
+          trailing_whitespace
+          |> List.first()
+          |> parse_only_whitespace("", "")
         end
       ]
       |> List.flatten()
@@ -197,6 +178,29 @@ defmodule Surface.Code.Formatter do
 
   # Not a string; do nothing
   def parse_whitespace(node, _last, _next), do: [node]
+
+  # Parse a string that only has whitespace, returning [:space]
+  # or a list of `:newline` (with at most 2)
+  @spec parse_only_whitespace(String.t(), surface_node | nil, surface_node | nil) ::
+          list(:space | :newline)
+  defp parse_only_whitespace(text, last, next) do
+    # This span of text is _only_ whitespace
+    newlines =
+      text
+      |> String.graphemes()
+      |> Enum.count(&(&1 == "\n"))
+
+    if force_newline_separator_for?(last) or force_newline_separator_for?(next) do
+      # Force at least one newline
+      List.duplicate(:newline, max(newlines, 1))
+    else
+      if newlines > 0 do
+        List.duplicate(:newline, newlines)
+      else
+        [:space]
+      end
+    end
+  end
 
   defp force_newline_separator_for?({_tag, _attributes, children, _meta}) do
     Enum.any?(children, fn
