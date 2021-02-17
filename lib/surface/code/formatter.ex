@@ -34,12 +34,18 @@ defmodule Surface.Code.Formatter do
 
   @type formatter_node :: Surface.Code.surface_node() | whitespace
 
+  alias Surface.Code.Formatter.Phases.{
+    TagWhitespace,
+    SurroundingWhitespace
+  }
+
   @doc "Given a list of `t:formatter_node/0`, return a formatted string of Surface code"
   @spec format(list(Surface.Code.surface_node()), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
     opts = Keyword.put_new(opts, :indent, 0)
 
-    [:indent | Enum.flat_map(nodes, &tag_whitespace/1)]
+    nodes
+    |> run_phases()
     |> adjust_whitespace()
     |> Enum.map(&render(&1, opts))
     |> List.flatten()
@@ -48,105 +54,27 @@ defmodule Surface.Code.Formatter do
     |> Enum.join()
   end
 
+  defp run_phases(nodes) do
+    Enum.reduce(phases(), nodes, fn phase, nodes ->
+      phase.run(nodes)
+    end)
+  end
+
+  defp phases do
+    [
+      TagWhitespace,
+      SurroundingWhitespace
+    ]
+  end
+
   @doc """
-  This function takes a node provided by `Surface.Compiler.Parser.parse/1`
-  and converts the leading/trailing whitespace into `t:whitespace/0` nodes.
+  Given a tag, return whether to render the contens verbatim instead of formatting them.
+  Specifically, don't modify contents of macro components or <pre> and <code> tags.
   """
-  @spec tag_whitespace(Surface.Code.surface_node()) :: [
-          Surface.Code.surface_node() | :newline | :space
-        ]
-  def tag_whitespace(text) when is_binary(text) do
-    # This is a string/text node; analyze and tag the leading and trailing whitespace
-
-    if String.trim(text) == "" do
-      # This is a whitespace-only node; tag the whitespace
-      tag_whitespace_string(text)
-    else
-      # This text contains more than whitespace; analyze and tag the leading
-      # and trailing whitespace separately.
-      leading_whitespace =
-        ~r/^\s+/
-        |> single_match!(text)
-        |> tag_whitespace_string()
-
-      trailing_whitespace =
-        ~r/\s+$/
-        |> single_match!(text)
-        |> tag_whitespace_string()
-
-      # Get each line of the text node, with whitespace trimmed so we can fix indentation
-      lines =
-        text
-        |> String.trim()
-        |> String.split("\n")
-        |> Enum.map(&String.trim/1)
-        |> Enum.intersperse(:newline)
-        |> Enum.reject(&(&1 == ""))
-
-      leading_whitespace ++ lines ++ trailing_whitespace
-    end
-
-    # HTML comments are stripped by Surface, and when this happens
-    # the surrounding text are counted as separate nodes and not joined.
-    # As a result, it's possible to end up with more than 2 consecutive
-    # newlines. So here, we check for that and deduplicate them.
-  end
-
-  def tag_whitespace({tag, attributes, children, meta}) do
-    # This is an HTML element or Surface component
-
-    children =
-      if render_contents_verbatim?(tag) do
-        # Don't tag the contents of this element; it's in a protected class
-        # of elements in which the contents are not supposed to be touched
-        # (such as <pre>).
-        #
-        # Note that since we're not tagging the whitespace (i.e. converting
-        # sections of the string to :newline and :space atoms), this means
-        # we can adjust the whitespace tags later and we're guaranteed not
-        # to accidentally modify the contents of these "render verbatim" tags.
-        children
-      else
-        # Recurse into tag_whitespace for all of the children of this element/component
-        # so that they get their whitespace tagged as well
-        Enum.flat_map(children, &tag_whitespace/1)
-      end
-
-    [{tag, attributes, children, meta}]
-  end
-
-  def tag_whitespace({:interpolation, _, _} = interpolation), do: [interpolation]
-
-  # Don't modify contents of macro components or <pre> and <code> tags
-  defp render_contents_verbatim?("#" <> _), do: true
-  defp render_contents_verbatim?("pre"), do: true
-  defp render_contents_verbatim?("code"), do: true
-  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
-
-  defp single_match!(regex, string) do
-    case Regex.run(regex, string) do
-      [match] -> match
-      nil -> nil
-    end
-  end
-
-  # Tag a string that only has whitespace, returning [:space] or a list of `:newline`
-  @spec tag_whitespace_string(String.t() | nil) :: list(:space | :newline)
-  defp tag_whitespace_string(nil), do: []
-
-  defp tag_whitespace_string(text) when is_binary(text) do
-    # This span of text is _only_ whitespace
-    newlines =
-      text
-      |> String.graphemes()
-      |> Enum.count(&(&1 == "\n"))
-
-    if newlines > 0 do
-      List.duplicate(:newline, newlines)
-    else
-      [:space]
-    end
-  end
+  def render_contents_verbatim?("#" <> _), do: true
+  def render_contents_verbatim?("pre"), do: true
+  def render_contents_verbatim?("code"), do: true
+  def render_contents_verbatim?(tag) when is_binary(tag), do: false
 
   @spec adjust_whitespace([Surface.Code.surface_node() | whitespace]) :: [
           Surface.Code.surface_node() | whitespace
