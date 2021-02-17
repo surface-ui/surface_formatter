@@ -40,7 +40,7 @@ The formatter mostly follows these rules:
 - Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
 - Collapses extra newlines down to at most one blank line.
 
-See `Surface.Code.format_string!/2` for further documentation.
+See `Surface.Formatter.format_string!/2` for further documentation.
 
 ## Example at a glance
 

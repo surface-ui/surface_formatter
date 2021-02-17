@@ -12,11 +12,11 @@ defmodule Surface.Formatter do
   @type option :: {:line_length, integer} | {:indent, integer}
 
   @typedoc """
-  The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
+  The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`.
   """
   @type tag :: String.t()
 
-  @typedoc "The value of a parsed HTML/Component attribute"
+  @typedoc "The value of a parsed HTML/Component attribute."
   @type attribute_value ::
           integer
           | boolean
@@ -24,10 +24,10 @@ defmodule Surface.Formatter do
           | {:attribute_expr, interpolated_expression :: String.t(), term}
           | [String.t()]
 
-  @typedoc "A parsed HTML/Component attribute name and value"
+  @typedoc "A parsed HTML/Component attribute name and value."
   @type attribute :: {name :: String.t(), attribute_value, term}
 
-  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`"
+  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`."
   @type surface_node ::
           String.t()
           | {:interpolation, String.t(), map}
@@ -39,8 +39,8 @@ defmodule Surface.Formatter do
   The Surface parser does not return these, but formatter phases introduce these nodes
   in preparation for rendering.
 
-  - `:newline` adds a `\n` character
-  - `:space` adds a ` ` (space) character
+  - `:newline` adds a newline (`\\n`) character
+  - `:space` adds a space (` `) character
   - `:indent` adds spaces at the appropriate indentation amount
   - `:indent_one_less` adds spaces at 1 indentation level removed (used for closing tags)
   """
@@ -50,6 +50,12 @@ defmodule Surface.Formatter do
           | :indent
           | :indent_one_less
 
+  @typedoc """
+  A node that will ultimately be sent to `Surface.Formatter.Render.node/2` for rendering.
+
+  The output of `Surface.Compiler.Parser.parse/1` is ran through the various formatting
+  phases, which ultimately output a tree of this type.
+  """
   @type formatter_node :: surface_node | whitespace
 
   @doc """
@@ -141,22 +147,24 @@ defmodule Surface.Formatter do
 
   ### Splitting children onto separate lines
 
-  If there is a not a _lack_ of whitespace that needs to be respected, the
-  formatter puts separate nodes (e.g. HTML elements, interpolations `{{ ... }}`,
-  etc) on their own line. This means that
+  In certain scenarios, the formatter will move nodes to their own line:
+
+  (Below, "element" means an HTML element or a Surface component.)
+
+  1. If an element has a newline before, the formatter will ensure there is a newline after it.
+  1. If an element contains other elements as children, it will be surrounded by newlines.
+  1. If there is a space after an opening tag or before a closing tag, it is converted to a newline.
+  1. If a closing tag is put on its own line, the formatter ensures there's a newline before the next sibling node.
+
+  Since SurfaceFormatter doesn't know if a component represents an inline or block element,
+  it does not currently make distinctions between elements that should or should not be
+  moved onto their own lines, other than the above rules.
+
+  This allows inline elements to be placed among text without splitting them onto their own lines:
 
   ```html
-  <div> <p>Hello</p> {{1 + 1}} <p>Goodbye</p> </div>
-  ```
-
-  will be formatted as
-
-  ```html
-  <div>
-    <p>Hello</p>
-    {{ 1 + 1 }}
-    <p>Goodbye</p>
-  </div>
+  The <b>Dialog</b> is a stateless component. All event handlers
+  had to be defined in the parent <b>LiveView</b>.
   ```
 
   ### Newline characters
@@ -169,50 +177,21 @@ defmodule Surface.Formatter do
   This means that
 
   ```html
-  <section>
-
-
-  Hello
+  <p>Hello</p>
 
 
 
-  </section>
+
+
+  <p>Goodbye</p>
   ```
 
   will be formatted as
 
   ```html
-  <section>
+  <p>Hello</p>
 
-    Hello
-
-  </section>
-  ```
-
-  It also means that
-
-  ```html
-  <section>
-    <p>Hello</p>
-    <p>and</p>
-
-
-
-
-
-    <p>Goodbye</p>
-  </section>
-  ```
-
-  will be formatted as
-
-  ```html
-  <section>
-    <p>Hello</p>
-    <p>and</p>
-
-    <p>Goodbye</p>
-  </section>
+  <p>Goodbye</p>
   ```
 
   ## Attributes

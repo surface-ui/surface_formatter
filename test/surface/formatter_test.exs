@@ -802,5 +802,56 @@ defmodule Surface.FormatterTest do
       </RootComponent>
       """
     )
+
+    assert_formatter_outputs(
+      """
+      <div> <p>Hello</p> </div>
+      """,
+      """
+      <div>
+        <p>Hello</p>
+      </div>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <p>Hello</p>
+
+
+
+
+
+      <p>Goodbye</p>
+      """,
+      """
+      <p>Hello</p>
+
+      <p>Goodbye</p>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <section>
+        <p>Hello</p>
+        <p>and</p>
+
+
+
+
+
+        <p>Goodbye</p>
+      </section>
+      """,
+      """
+      <section>
+        <p>Hello</p>
+        <p>and</p>
+
+        <p>Goodbye</p>
+      </section>
+      """
+    )
   end
 end

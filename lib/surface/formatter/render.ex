@@ -9,7 +9,10 @@ defmodule Surface.Formatter.Render do
   # Line length of opening tags before splitting attributes onto their own line
   @default_line_length 98
 
-  # Take a formatter_node and return a formatted string
+  @doc """
+  Given a `t:Surface.Formatter.formatter_node/0` node, render it to a string
+  for writing back into a file.
+  """
   @spec node(Formatter.formatter_node(), list(Formatter.option())) :: String.t() | nil
   def node(segment, opts)
 
