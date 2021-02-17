@@ -1,6 +1,28 @@
 defmodule Surface.Code do
   @moduledoc "Utilities for dealing with Surface code"
 
+  @typedoc """
+  The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
+  """
+  @type tag :: String.t()
+
+  @typedoc "The value of a parsed HTML/Component attribute"
+  @type attribute_value ::
+          integer
+          | boolean
+          | String.t()
+          | {:attribute_expr, interpolated_expression :: String.t(), term}
+          | [String.t()]
+
+  @typedoc "A parsed HTML/Component attribute name and value"
+  @type attribute :: {name :: String.t(), attribute_value, term}
+
+  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`"
+  @type surface_node ::
+          String.t()
+          | {:interpolation, String.t(), map}
+          | {tag, list(attribute), list(surface_node), map}
+
   @doc """
   Formats the given Surface code string. (Typically the contents of an `~H`
   sigil or `.sface` file.)
@@ -325,4 +347,12 @@ defmodule Surface.Code do
 
     Surface.Code.Formatter.format(parsed, opts)
   end
+
+  @doc """
+  Returns true if the argument is an element (HTML element or surface
+  component), false otherwise.
+  """
+  @spec is_element?(surface_node) :: boolean()
+  def is_element?({_, _, _, _}), do: true
+  def is_element?(_), do: false
 end

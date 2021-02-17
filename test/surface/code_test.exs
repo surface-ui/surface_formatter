@@ -517,15 +517,9 @@ defmodule Surface.CodeTest do
     )
 
     # Should these be collapsed?
-    assert_formatter_outputs(
-      """
-      <Foo> </Foo>
-      """,
-      """
-      <Foo>
-      </Foo>
-      """
-    )
+    assert_formatter_doesnt_change("""
+    <Foo> </Foo>
+    """)
   end
 
   test "interpolated lists in attributes with invisible brackets are formatted" do
