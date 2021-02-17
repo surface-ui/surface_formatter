@@ -1,12 +1,12 @@
-defmodule Surface.Code.Formatter.Phases.TagWhitespace do
+defmodule Surface.Formatter.Phases.TagWhitespace do
   @moduledoc """
   Inspects all text nodes and "tags" leading and trailing whitespace
   by converting it into a `:space` atom or a list of `:newline` atoms.
   """
 
-  @behaviour Surface.Code.Formatter.Phase
+  @behaviour Surface.Formatter.Phase
 
-  alias Surface.Code.Formatter
+  alias Surface.Formatter
 
   def run(nodes) do
     Enum.flat_map(nodes, &tag_whitespace/1)
@@ -16,8 +16,8 @@ defmodule Surface.Code.Formatter.Phases.TagWhitespace do
   This function takes a node provided by `Surface.Compiler.Parser.parse/1`
   and converts the leading/trailing whitespace into `t:whitespace/0` nodes.
   """
-  @spec tag_whitespace(Surface.Code.surface_node()) :: [
-          Surface.Code.surface_node() | :newline | :space
+  @spec tag_whitespace(Formatter.surface_node()) :: [
+          Formatter.surface_node() | :newline | :space
         ]
   def tag_whitespace(text) when is_binary(text) do
     # This is a string/text node; analyze and tag the leading and trailing whitespace

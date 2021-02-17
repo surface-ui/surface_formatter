@@ -57,6 +57,8 @@ defmodule Mix.Tasks.Surface.Format do
 
   use Mix.Task
 
+  alias Surface.Formatter
+
   #
   # Functions unique to surface.format (Everything else is taken from Mix.Tasks.Format)
   #
@@ -64,7 +66,7 @@ defmodule Mix.Tasks.Surface.Format do
   defp format_file_contents!(file, input, opts) do
     case Path.extname(file) do
       ".sface" ->
-        Surface.Code.format_string!(input, opts)
+        Formatter.format_string!(input, opts)
 
       _ ->
         format_ex_string!(input, opts)
@@ -84,13 +86,13 @@ defmodule Mix.Tasks.Surface.Format do
 
       "\n#{indentation}~H\"\"\"\n#{
         surface_code
-        |> Surface.Code.format_string!(opts)
+        |> Formatter.format_string!(opts)
       }#{indentation}\"\"\""
     end)
   end
 
   #
-  # The below functions are taken directly from Mix.Tasks.Format with only slight modification
+  # The below functions are taken directly from Mix.Tasks.Format with insignificant modification
   #
 
   # TODO: Add support for `check_equivalent: :boolean` here

@@ -1,14 +1,13 @@
-defmodule Surface.Code.Formatter.Phases.Newlines do
+defmodule Surface.Formatter.Phases.Newlines do
   @moduledoc """
   Standardizes usage of newlines.
 
   - Prevents more than 1 empty line in a row.
   - Prevents an empty line separating an opening/closing tag from the contents inside.
-  Prevent more than a single empty line in a row.
   """
 
-  @behaviour Surface.Code.Formatter.Phase
-  alias Surface.Code.Formatter.Phase
+  @behaviour Surface.Formatter.Phase
+  alias Surface.Formatter.Phase
 
   def run(nodes) do
     nodes

@@ -1,10 +1,10 @@
-defmodule Surface.Code.Formatter.Phases.SpacesToNewlines do
+defmodule Surface.Formatter.Phases.SpacesToNewlines do
   @moduledoc """
   In a variety of scenarios, converts :space nodes to :newline nodes.
   """
 
-  @behaviour Surface.Code.Formatter.Phase
-  alias Surface.Code.Formatter.Phase
+  @behaviour Surface.Formatter.Phase
+  alias Surface.{Formatter, Formatter.Phase}
 
   def run(nodes) do
     nodes
@@ -47,7 +47,7 @@ defmodule Surface.Code.Formatter.Phases.SpacesToNewlines do
          accumulated
        ) do
     whitespace =
-      if Enum.any?(children, &Surface.Code.is_element?/1) do
+      if Enum.any?(children, &Formatter.is_element?/1) do
         :newline
       else
         :space
@@ -64,7 +64,7 @@ defmodule Surface.Code.Formatter.Phases.SpacesToNewlines do
          accumulated
        ) do
     whitespace =
-      if Enum.any?(children, &Surface.Code.is_element?/1) do
+      if Enum.any?(children, &Formatter.is_element?/1) do
         :newline
       else
         :space

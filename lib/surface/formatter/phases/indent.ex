@@ -1,11 +1,11 @@
-defmodule Surface.Code.Formatter.Phases.Indent do
+defmodule Surface.Formatter.Phases.Indent do
   @moduledoc """
   Relies on `Newlines` phase, which collapses :newline nodes
   to at most 2 in a row.
   """
 
-  @behaviour Surface.Code.Formatter.Phase
-  alias Surface.Code.Formatter.Phase
+  @behaviour Surface.Formatter.Phase
+  alias Surface.Formatter.Phase
 
   def run(nodes) do
     # Add initial indent on start of first line

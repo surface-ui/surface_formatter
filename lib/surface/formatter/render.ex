@@ -1,7 +1,7 @@
-defmodule Surface.Code.Formatter.Render do
+defmodule Surface.Formatter.Render do
   @moduledoc "Functions for rendering formatter nodes"
 
-  alias Surface.Code.Formatter
+  alias Surface.Formatter
 
   # Use 2 spaces for a tab
   @tab "  "

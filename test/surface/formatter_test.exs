@@ -1,8 +1,10 @@
-defmodule Surface.CodeTest do
+defmodule Surface.FormatterTest do
   use ExUnit.Case
 
+  alias Surface.Formatter
+
   def assert_formatter_outputs(input_code, expected_formatted_result, opts \\ []) do
-    assert Surface.Code.format_string!(input_code, opts) == expected_formatted_result
+    assert Formatter.format_string!(input_code, opts) == expected_formatted_result
   end
 
   def assert_formatter_doesnt_change(code, opts \\ []) do
