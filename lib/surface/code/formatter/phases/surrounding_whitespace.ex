@@ -6,6 +6,6 @@ defmodule Surface.Code.Formatter.Phases.SurroundingWhitespace do
   @behaviour Surface.Code.Formatter.Phase
 
   def run(nodes) do
-    [:indent | nodes] # ++ [:newline]
+    [:indent | nodes]
   end
 end

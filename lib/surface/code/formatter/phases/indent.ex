@@ -1,15 +1,24 @@
 defmodule Surface.Code.Formatter.Phases.Indent do
+  @moduledoc """
+  Relies on `Newlines` phase, which collapses :newline nodes
+  to at most 2 in a row.
+  """
+
   @behaviour Surface.Code.Formatter.Phase
   alias Surface.Code.Formatter.Phase
 
   def run(nodes) do
-    nodes
-    |> add_indentation()
-    |> Phase.recurse_on_children(&run/1)
+    # Add initial indent on start of first line
+    indent([:indent | nodes])
   end
 
-  # By the time add_indentation is called, :newline elements have
-  # been reduced to at most 2 in a row.
+  defp indent(nodes) do
+    # Deeply recurse through nodes and add indentation before newlines
+    nodes
+    |> add_indentation()
+    |> Phase.recurse_on_children(&indent/1)
+  end
+
   def add_indentation(nodes, accumulated \\ [])
 
   def add_indentation([:newline, :newline | rest], accumulated) do

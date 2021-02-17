@@ -29,16 +29,13 @@ defmodule Surface.Code.Formatter do
   @type formatter_node :: Surface.Code.surface_node() | whitespace
 
   alias Surface.Code.Formatter.Render
+
   alias Surface.Code.Formatter.Phases.{
-    CollapseNewlines,
     TagWhitespace,
-    SurroundingWhitespace,
-    NormalizeWhitespaceSurroundingElements,
-    EnsureNewlinesSurroundingElementsWithElementChildren,
-    ConvertSpacesToNewlinesAroundEdgeElementChildren,
-    MoveSiblingsAfterLoneClosingTagToNewLine,
-    PreventLeadingAndTrailingEmptyLines,
-    Indent
+    Newlines,
+    SpacesToNewlines,
+    Indent,
+    FinalNewline
   }
 
   @doc "Given a list of `t:formatter_node/0`, return a formatted string of Surface code"
@@ -50,8 +47,6 @@ defmodule Surface.Code.Formatter do
     |> run_phases()
     |> Enum.map(&Render.node(&1, opts))
     |> List.flatten()
-    # Add final newline
-    |> Kernel.++(["\n"])
     |> Enum.join()
   end
 
@@ -65,14 +60,10 @@ defmodule Surface.Code.Formatter do
   defp phases do
     [
       TagWhitespace,
-      SurroundingWhitespace,
-      CollapseNewlines,
-      NormalizeWhitespaceSurroundingElements,
-      EnsureNewlinesSurroundingElementsWithElementChildren,
-      ConvertSpacesToNewlinesAroundEdgeElementChildren,
-      MoveSiblingsAfterLoneClosingTagToNewLine,
-      PreventLeadingAndTrailingEmptyLines,
-      Indent
+      Newlines,
+      SpacesToNewlines,
+      Indent,
+      FinalNewline
     ]
   end
 

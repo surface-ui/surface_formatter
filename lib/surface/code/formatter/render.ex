@@ -10,7 +10,7 @@ defmodule Surface.Code.Formatter.Render do
   @default_line_length 98
 
   # Take a formatter_node and return a formatted string
-  @spec node(Formatter.formatter_node, list(Formatter.option)) :: String.t() | nil
+  @spec node(Formatter.formatter_node(), list(Formatter.option())) :: String.t() | nil
   def node(segment, opts)
 
   def node({:interpolation, expression, _meta}, opts) do
