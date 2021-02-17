@@ -1,16 +1,18 @@
-defmodule Surface.CodeTest do
+defmodule Surface.FormatterTest do
   use ExUnit.Case
 
-  def test_formatter(input_code, expected_formatted_result, opts \\ []) do
-    assert Surface.Code.format_string!(input_code, opts) == expected_formatted_result
+  alias Surface.Formatter
+
+  def assert_formatter_outputs(input_code, expected_formatted_result, opts \\ []) do
+    assert Formatter.format_string!(input_code, opts) == expected_formatted_result
   end
 
-  def assert_code_doesnt_change(code, opts \\ []) do
-    test_formatter(code, code, opts)
+  def assert_formatter_doesnt_change(code, opts \\ []) do
+    assert_formatter_outputs(code, code, opts)
   end
 
   test "children are indented 1 from parents" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <div>
       <ul>
@@ -37,7 +39,7 @@ defmodule Surface.CodeTest do
   end
 
   test "Surface brackets for Elixir code still include the original code snippet" do
-    test_formatter(
+    assert_formatter_outputs(
       """
           <div :if = {{1 + 1      }}>
       {{"hello "<>"dolly"}}
@@ -56,7 +58,7 @@ defmodule Surface.CodeTest do
   end
 
   test "Contents of Macro Components are preserved" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <#MacroComponent>
     * One
     * Two
@@ -67,7 +69,7 @@ defmodule Surface.CodeTest do
     </#MacroComponent>
     """)
 
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <#MacroComponent>
      * One
      * Two
@@ -80,13 +82,13 @@ defmodule Surface.CodeTest do
   end
 
   test "Self closing Macro Components are preserved" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <#MacroComponent />
     """)
   end
 
   test "lack of whitespace is preserved" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <div>
       <dt>{{ @tldr }}/{{ @question }}</dt>
@@ -103,14 +105,14 @@ defmodule Surface.CodeTest do
   end
 
   test "shorthand surface syntax is formatted by Elixir code formatter" do
-    test_formatter(
+    assert_formatter_outputs(
       "<div class={{ foo:        bar }}></div>",
       "<div class={{ foo: bar }} />\n"
     )
   end
 
   test "interpolation in attributes is formatted as expected" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <div class={{[1, 2, 3]}} />
       """,
@@ -119,7 +121,7 @@ defmodule Surface.CodeTest do
       """
     )
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <div class={{foo: "foofoofoofoofoofoofoofoofoofoo", bar: "barbarbarbarbarbarbarbarbarbarbar", baz: "bazbazbazbazbazbazbazbaz"}} />
       """,
@@ -134,7 +136,7 @@ defmodule Surface.CodeTest do
   end
 
   test "interpolation in attributes of deeply nested elements" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <section>
       <div>
@@ -161,7 +163,7 @@ defmodule Surface.CodeTest do
     # We have no context about whether the whitespace in the given attribute is significant,
     # so we might break code by modifying it. Therefore, the contents of string attributes
     # are left alone other than formatting interpolated expressions.
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component foo="bar {{@baz}}  "></Component>
       """,
@@ -172,7 +174,7 @@ defmodule Surface.CodeTest do
   end
 
   test "boolean, integer, and string literals in attributes are not wrapped in Surface brackets" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component true_prop={{ true }} false_prop={{ false }}
       int_prop={{12345}} str_prop={{ "some_string_value" }} />
@@ -184,7 +186,7 @@ defmodule Surface.CodeTest do
   end
 
   test "float literals are kept in Surface brackets (because it doesn't work not to)" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component float_prop={{123.456}} />
       """,
@@ -195,7 +197,7 @@ defmodule Surface.CodeTest do
   end
 
   test "numbers are formatted with underscores per the Elixir formatter" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component int_prop={{1000000000}} float_prop={{123456789.123456789 }} />
       """,
@@ -206,13 +208,11 @@ defmodule Surface.CodeTest do
   end
 
   test "attributes wrap at 98 characters by default" do
-    ninety_seven_chars = """
+    assert_formatter_doesnt_change("""
     <Component foo="..........." bar="..............." baz="............" qux="..................." />
-    """
+    """)
 
-    test_formatter(ninety_seven_chars, ninety_seven_chars)
-
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component foo="..........." bar="..............." baz="............" qux="...................." />
       """,
@@ -228,7 +228,7 @@ defmodule Surface.CodeTest do
   end
 
   test "attribute wrapping can be configured by :line_length in opts" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Foo bar="bar" baz="baz"/>
       """,
@@ -245,7 +245,7 @@ defmodule Surface.CodeTest do
   test "a single attribute always begins on the same line as the opening tag" do
     # Wrap in another element to help test whether indentation is working properly
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
       <Foo bio={{%{age: 23, name: "John Jacob Jingleheimerschmidt", title: "Lead rockstar 10x ninja brogrammer", reports_to: "James Jacob Jingleheimerschmidt"}}}/>
@@ -263,7 +263,7 @@ defmodule Surface.CodeTest do
       """
     )
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
         <Foo urls={{["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}}/>
@@ -279,7 +279,7 @@ defmodule Surface.CodeTest do
       """
     )
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
       <Foo bar={{baz: "BAZ", qux: "QUX", long: "LONG", longer: "LONGER", longest: "LONGEST", wrapping: "WRAPPING", next_line: "NEXT_LINE"}} />
@@ -300,7 +300,7 @@ defmodule Surface.CodeTest do
       """
     )
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
       <Foo bar="A really really really really really really long string that makes this line longer than the default 98 characters"/>
@@ -315,7 +315,7 @@ defmodule Surface.CodeTest do
   end
 
   test "(bugfix) a trailing interpolation does not get an extra newline added" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <p>Foo</p><p>Bar</p>{{ baz }}
     """)
   end
@@ -324,7 +324,7 @@ defmodule Surface.CodeTest do
     # Note that the output looks pretty messy, but it's because
     # we're retaining 100% of the exact characters between the
     # <pre> and </pre> tags, etc.
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
       <pre>
@@ -359,7 +359,7 @@ defmodule Surface.CodeTest do
     # indentation level because those tags are not inside a context
     # in which we render children verbatim. (In other words, there's
     # no risk of changing browser behavior.)
-    test_formatter(
+    assert_formatter_outputs(
       """
       <pre>
       {{   @data   }}
@@ -392,7 +392,7 @@ defmodule Surface.CodeTest do
     # Note that the <code> and <#Macro> components (which are too indented)
     # are brought all the way to the left side, but all of the whitespace
     # characters therein are left alone.
-    test_formatter(
+    assert_formatter_outputs(
       """
       <pre>
           <div>    <p>  Hello world  </p>  </div>
@@ -423,7 +423,7 @@ defmodule Surface.CodeTest do
   end
 
   test "Attributes are lines up properly when split onto newlines with a multi-line attribute" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Parent>
         <Child
@@ -461,7 +461,7 @@ defmodule Surface.CodeTest do
     # The attributes aren't the easiest to read in that case, and we're making the choice not
     # to open the can of worms of potentially re-ordering attributes, because that introduces
     # plenty of complexity and might not be desired by users.
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Parent>
         <Child
@@ -486,7 +486,7 @@ defmodule Surface.CodeTest do
       """
     )
 
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Parent>
         <Child first={{[
@@ -509,7 +509,7 @@ defmodule Surface.CodeTest do
   end
 
   test "tags without children are collapsed if there is no whitespace between them" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Foo></Foo>
       """,
@@ -519,19 +519,13 @@ defmodule Surface.CodeTest do
     )
 
     # Should these be collapsed?
-    test_formatter(
-      """
-      <Foo> </Foo>
-      """,
-      """
-      <Foo>
-      </Foo>
-      """
-    )
+    assert_formatter_doesnt_change("""
+    <Foo> </Foo>
+    """)
   end
 
   test "interpolated lists in attributes with invisible brackets are formatted" do
-    test_formatter(
+    assert_formatter_outputs(
       ~S"""
       <Component foo={{ "bar", 1, @a_very_long_name_in_assigns <> @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression }} />
       """,
@@ -551,7 +545,7 @@ defmodule Surface.CodeTest do
     # way to ensure the formatter doesn't accidentally change the behavior of the resulting code.
     #
     # As with the Elixir formatter, it's important that the semantics of the code remain the same.
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component foo=false bar="a
         b
@@ -570,7 +564,7 @@ defmodule Surface.CodeTest do
   end
 
   test "existing whitespace in string attributes is not altered when there is only one attribute" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <foo>
       <bar>
         <baz qux="one
@@ -581,7 +575,7 @@ defmodule Surface.CodeTest do
   end
 
   test "attributes that are a list merged with a keyword list are formatted" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <span class={{"container", "container--dark": @dark_mode}} />
       """,
@@ -592,7 +586,7 @@ defmodule Surface.CodeTest do
   end
 
   test "interpolated attributes with a function call that omits parentheses are formatted" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component items={{Enum.map @items, & &1.foo}}/>
       """,
@@ -603,7 +597,7 @@ defmodule Surface.CodeTest do
   end
 
   test "interpolations that line-wrap are indented properly" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component>
         {{ link "Log out", to: Routes.user_session_path(Endpoint, :delete), method: :delete, class: "container"}}
@@ -622,7 +616,7 @@ defmodule Surface.CodeTest do
   end
 
   test "a single extra newline between children is retained" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <Component>
       foo
 
@@ -632,7 +626,7 @@ defmodule Surface.CodeTest do
   end
 
   test "multiple extra newlines between children are collapsed to one" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <Component>
         foo
@@ -653,7 +647,7 @@ defmodule Surface.CodeTest do
   end
 
   test "at most one blank newline is retained when an HTML comment exists" do
-    test_formatter(
+    assert_formatter_outputs(
       ~S"""
       <div>
         <Component />
@@ -673,7 +667,7 @@ defmodule Surface.CodeTest do
   end
 
   test "an interpolation with only a code comment is formatted" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       {{# Foo}}
       """,
@@ -684,7 +678,7 @@ defmodule Surface.CodeTest do
   end
 
   test "indent option" do
-    test_formatter(
+    assert_formatter_outputs(
       """
       <p>
       <span>
@@ -703,24 +697,70 @@ defmodule Surface.CodeTest do
     )
   end
 
-  test "inline tags mixed with text are left on the same line unless max width is violated" do
-    assert_code_doesnt_change("""
+  test "inline elements mixed with text are left on the same line by default" do
+    assert_formatter_doesnt_change("""
     The <b>Dialog</b> is a stateless component. All event handlers
     had to be defined in the parent <b>LiveView</b>.
     """)
 
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
     <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
     """)
 
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     This <b>Dialog</b> is a stateful component. Cool!
+    """)
+
+    assert_formatter_doesnt_change("""
+    <Card>
+      <Header>
+        A simple card component
+      </Header>
+
+      This is the same Card component but now we're using
+      <strong>typed slotables</strong> instead of <strong>templates</strong>.
+
+      <Footer>
+        <a href="#" class="card-footer-item">Footer Item 1</a>
+        <a href="#" class="card-footer-item">Footer Item 2</a>
+      </Footer>
+    </Card>
     """)
   end
 
+  test "when element content and tags aren't left on the same line, the next sibling is pushed to its own line" do
+    assert_formatter_outputs(
+      """
+      <div> <div> Hello </div> {{1 + 1}} <p>Goodbye</p> </div>
+      """,
+      """
+      <div>
+        <div>
+          Hello
+        </div>
+        {{ 1 + 1 }} <p>Goodbye</p>
+      </div>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <div> <p> <span>Hello</span> </p> {{1 + 1}} <p>Goodbye</p> </div>
+      """,
+      """
+      <div>
+        <p>
+          <span>Hello</span>
+        </p>
+        {{ 1 + 1 }} <p>Goodbye</p>
+      </div>
+      """
+    )
+  end
+
   test "(bugfix) newlines aren't removed for no reason" do
-    assert_code_doesnt_change("""
+    assert_formatter_doesnt_change("""
     <Test />
 
     Example 1
@@ -733,7 +773,7 @@ defmodule Surface.CodeTest do
   end
 
   test "for docs" do
-    test_formatter(
+    assert_formatter_outputs(
       """
        <RootComponent with_many_attributes={{ true }} causing_this_line_to_wrap={{ true}} because_it_is_too_long={{ "yes, this line is long enough to wrap" }}>
          <!-- An HTML comment -->
@@ -776,6 +816,57 @@ defmodule Surface.CodeTest do
           Default slot contents
         </Child>
       </RootComponent>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <div> <p>Hello</p> </div>
+      """,
+      """
+      <div>
+        <p>Hello</p>
+      </div>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <p>Hello</p>
+
+
+
+
+
+      <p>Goodbye</p>
+      """,
+      """
+      <p>Hello</p>
+
+      <p>Goodbye</p>
+      """
+    )
+
+    assert_formatter_outputs(
+      """
+      <section>
+        <p>Hello</p>
+        <p>and</p>
+
+
+
+
+
+        <p>Goodbye</p>
+      </section>
+      """,
+      """
+      <section>
+        <p>Hello</p>
+        <p>and</p>
+
+        <p>Goodbye</p>
+      </section>
       """
     )
   end

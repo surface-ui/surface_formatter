@@ -1,5 +1,62 @@
-defmodule Surface.Code do
-  @moduledoc "Utilities for dealing with Surface code"
+defmodule Surface.Formatter do
+  @moduledoc "Functions for formatting Surface code snippets."
+
+  alias Surface.Formatter.{Phases, Render}
+
+  @typedoc """
+  Options that can be passed to `Surface.Formatter.format_string/2`.
+
+    - `:line_length` - Maximum line length before wrapping opening tags
+    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
+  """
+  @type option :: {:line_length, integer} | {:indent, integer}
+
+  @typedoc """
+  The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`.
+  """
+  @type tag :: String.t()
+
+  @typedoc "The value of a parsed HTML/Component attribute."
+  @type attribute_value ::
+          integer
+          | boolean
+          | String.t()
+          | {:attribute_expr, interpolated_expression :: String.t(), term}
+          | [String.t()]
+
+  @typedoc "A parsed HTML/Component attribute name and value."
+  @type attribute :: {name :: String.t(), attribute_value, term}
+
+  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`."
+  @type surface_node ::
+          String.t()
+          | {:interpolation, String.t(), map}
+          | {tag, list(attribute), list(surface_node), map}
+
+  @typedoc """
+  Whitespace nodes that can be rendered by `Surface.Formatter.Render.node/2`.
+
+  The Surface parser does not return these, but formatter phases introduce these nodes
+  in preparation for rendering.
+
+  - `:newline` adds a newline (`\\n`) character
+  - `:space` adds a space (` `) character
+  - `:indent` adds spaces at the appropriate indentation amount
+  - `:indent_one_less` adds spaces at 1 indentation level removed (used for closing tags)
+  """
+  @type whitespace ::
+          :newline
+          | :space
+          | :indent
+          | :indent_one_less
+
+  @typedoc """
+  A node that will ultimately be sent to `Surface.Formatter.Render.node/2` for rendering.
+
+  The output of `Surface.Compiler.Parser.parse/1` is ran through the various formatting
+  phases, which ultimately output a tree of this type.
+  """
+  @type formatter_node :: surface_node | whitespace
 
   @doc """
   Formats the given Surface code string. (Typically the contents of an `~H`
@@ -90,22 +147,23 @@ defmodule Surface.Code do
 
   ### Splitting children onto separate lines
 
-  If there is a not a _lack_ of whitespace that needs to be respected, the
-  formatter puts separate nodes (e.g. HTML elements, interpolations `{{ ... }}`,
-  etc) on their own line. This means that
+  In certain scenarios, the formatter will move nodes to their own line:
+
+  (Below, "element" means an HTML element or a Surface component.)
+
+  1. If an element contains other elements as children, it will be surrounded by newlines.
+  1. If there is a space after an opening tag or before a closing tag, it is converted to a newline.
+  1. If a closing tag is put on its own line, the formatter ensures there's a newline before the next sibling node.
+
+  Since SurfaceFormatter doesn't know if a component represents an inline or block element,
+  it does not currently make distinctions between elements that should or should not be
+  moved onto their own lines, other than the above rules.
+
+  This allows inline elements to be placed among text without splitting them onto their own lines:
 
   ```html
-  <div> <p>Hello</p> {{1 + 1}} <p>Goodbye</p> </div>
-  ```
-
-  will be formatted as
-
-  ```html
-  <div>
-    <p>Hello</p>
-    {{ 1 + 1 }}
-    <p>Goodbye</p>
-  </div>
+  The <b>Dialog</b> is a stateless component. All event handlers
+  had to be defined in the parent <b>LiveView</b>.
   ```
 
   ### Newline characters
@@ -118,50 +176,21 @@ defmodule Surface.Code do
   This means that
 
   ```html
-  <section>
-
-
-  Hello
+  <p>Hello</p>
 
 
 
-  </section>
+
+
+  <p>Goodbye</p>
   ```
 
   will be formatted as
 
   ```html
-  <section>
+  <p>Hello</p>
 
-    Hello
-
-  </section>
-  ```
-
-  It also means that
-
-  ```html
-  <section>
-    <p>Hello</p>
-    <p>and</p>
-
-
-
-
-
-    <p>Goodbye</p>
-  </section>
-  ```
-
-  will be formatted as
-
-  ```html
-  <section>
-    <p>Hello</p>
-    <p>and</p>
-
-    <p>Goodbye</p>
-  </section>
+  <p>Goodbye</p>
   ```
 
   ## Attributes
@@ -316,10 +345,46 @@ defmodule Surface.Code do
   are desired.
 
   """
-  @spec format_string!(String.t(), list(Surface.Code.Formatter.option())) :: String.t()
+  @spec format_string!(String.t(), list(option)) :: String.t()
   def format_string!(string, opts \\ []) do
-    string
-    |> Surface.Code.Formatter.parse()
-    |> Surface.Code.Formatter.format(opts)
+    {:ok, parsed} =
+      string
+      |> String.trim()
+      |> Surface.Compiler.Parser.parse()
+
+    # Ensure the :indent option is set
+    opts = Keyword.put_new(opts, :indent, 0)
+
+    [
+      Phases.TagWhitespace,
+      Phases.Newlines,
+      Phases.SpacesToNewlines,
+      Phases.Indent,
+      Phases.FinalNewline
+    ]
+    |> Enum.reduce(parsed, fn phase, nodes ->
+      phase.run(nodes)
+    end)
+    |> Enum.map(&Render.node(&1, opts))
+    |> List.flatten()
+    |> Enum.join()
   end
+
+  @doc """
+  Returns true if the argument is an element (HTML element or surface
+  component), false otherwise.
+  """
+  @spec is_element?(surface_node) :: boolean
+  def is_element?({_, _, _, _}), do: true
+  def is_element?(_), do: false
+
+  @doc """
+  Given a tag, return whether to render the contens verbatim instead of formatting them.
+  Specifically, don't modify contents of macro components or <pre> and <code> tags.
+  """
+  @spec render_contents_verbatim?(tag) :: boolean
+  def render_contents_verbatim?("#" <> _), do: true
+  def render_contents_verbatim?("pre"), do: true
+  def render_contents_verbatim?("code"), do: true
+  def render_contents_verbatim?(tag) when is_binary(tag), do: false
 end
