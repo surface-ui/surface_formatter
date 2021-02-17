@@ -318,8 +318,11 @@ defmodule Surface.Code do
   """
   @spec format_string!(String.t(), list(Surface.Code.Formatter.option())) :: String.t()
   def format_string!(string, opts \\ []) do
-    string
-    |> Surface.Code.Formatter.parse()
-    |> Surface.Code.Formatter.format(opts)
+    {:ok, parsed} =
+      string
+      |> String.trim()
+      |> Surface.Compiler.Parser.parse()
+
+    Surface.Code.Formatter.format(parsed, opts)
   end
 end

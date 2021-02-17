@@ -10,6 +10,12 @@ defmodule Surface.Code.Formatter do
   @default_line_length 98
 
   @typedoc """
+    - `:line_length` - Maximum line length before wrapping opening tags
+    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
+  """
+  @type option :: {:line_length, integer} | {:indent, integer}
+
+  @typedoc """
   The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
   """
   @type tag :: String.t()
@@ -32,14 +38,7 @@ defmodule Surface.Code.Formatter do
           | {tag, list(attribute), list(surface_node), map}
 
   @typedoc """
-  The first step of reading and understanding the whitespace is
-  to separate it into chunks that contain a newline vs those
-  that don't.
-  """
-  @type parsed_whitespace :: :newline | :space
-
-  @typedoc """
-  After whitespace is condensed down to `t:parsed_whitespace/0`, It's converted
+  After whitespace is condensed down to `:newline` and `:space`, It's converted
   to this type in a step that looks at the greater context of the whitespace
   and decides where to add indentation (and how much indentation), and where to
   split things onto separate lines.
@@ -49,55 +48,232 @@ defmodule Surface.Code.Formatter do
   - `:indent` adds spaces at the appropriate indentation amount
   - `:indent_one_less` adds spaces at 1 indentation level removed (used for closing tags)
   """
-  @type contextualized_whitespace ::
+  @type whitespace ::
           :newline
           | :space
           | :indent
           | :indent_one_less
 
-  @typedoc """
-  A node output by `parse/1`. Simply a transformation of the output of
-  `parse/1`, with contextualized whitespace nodes parsed out of the string
-  nodes.
-  """
-  @type formatter_node :: surface_node | contextualized_whitespace
-
-  @typedoc """
-    - `:line_length` - Maximum line length before wrapping opening tags
-    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
-  """
-  @type option :: {:line_length, integer} | {:indent, integer}
-
-  @doc """
-  Given a string of Surface code, return a list of surface nodes including special
-  whitespace nodes that enable formatting.
-  """
-  @spec parse(String.t()) :: list(formatter_node)
-  def parse(string) do
-    parsed =
-      string
-      |> String.trim()
-      |> Surface.Compiler.Parser.parse()
-      |> elem(1)
-      |> parse_whitespace_for_nodes()
-      |> contextualize_whitespace()
-
-    # Add initial indentation
-    [:indent | parsed]
-  end
+  @type formatter_node :: surface_node | whitespace
 
   @doc "Given a list of `t:formatter_node/0`, return a formatted string of Surface code"
-  @spec format(list(formatter_node), list(option)) :: String.t()
+  @spec format(list(surface_node), list(option)) :: String.t()
   def format(nodes, opts \\ []) do
     opts = Keyword.put_new(opts, :indent, 0)
 
     nodes
-    |> Enum.map(&render_node(&1, opts))
+    |> Enum.flat_map(&tag_whitespace/1)
+    |> IO.inspect(label: "============= A")
+    |> adjust_whitespace()
+    |> IO.inspect(label: "============= B")
+    |> Enum.map(&render(&1, opts))
     |> List.flatten()
     # Add final newline
     |> Kernel.++(["\n"])
     |> Enum.join()
   end
+
+  @doc """
+  This function takes a node provided by `Surface.Compiler.Parser.parse/1`
+  and converts the leading/trailing whitespace into `t:whitespace/0` nodes.
+  """
+  @spec tag_whitespace(surface_node) :: [surface_node | :newline | :space]
+  def tag_whitespace(text) when is_binary(text) do
+    # This is a string/text node; analyze and tag the leading and trailing whitespace
+
+    if String.trim(text) == "" do
+      # This is a whitespace-only node; tag the whitespace
+      tag_whitespace_string(text)
+    else
+      # This text contains more than whitespace; analyze and tag the leading
+      # and trailing whitespace separately.
+      leading_whitespace =
+        ~r/^\s+/
+        |> single_match!(text)
+        |> tag_whitespace_string()
+
+      trailing_whitespace =
+        ~r/\s+$/
+        |> single_match!(text)
+        |> tag_whitespace_string()
+
+      # Get each line of the text node, with whitespace trimmed so we can fix indentation
+      lines =
+        text
+        |> String.trim()
+        |> String.split("\n")
+        |> Enum.map(&String.trim/1)
+        |> Enum.intersperse(:newline)
+        |> Enum.reject(& &1 == "")
+
+      leading_whitespace ++ lines ++ trailing_whitespace
+    end
+
+    # HTML comments are stripped by Surface, and when this happens
+    # the surrounding text are counted as separate nodes and not joined.
+    # As a result, it's possible to end up with more than 2 consecutive
+    # newlines. So here, we check for that and deduplicate them.
+
+    #text
+    #|> String.graphemes()
+    #|> Enum.count(&(&1 == "\n"))
+
+    # - Return list of text nodes + tagged whitespace
+    # - If string is entirely whitespace, boil down to :space or list of :newline
+    # - If string is not entirely whitespace, ensure we put leading/trailing newline or space as needed
+    # - Prevent more than 2 successive newlines
+    # - If this is the first node in a set of children, ensure a newline at the beginning if there's any whitespace at all
+    #   (we never do a space, and if there's no whitespace we wouldn't be here)
+  end
+
+  def tag_whitespace({tag, attributes, children, meta}) do
+    # This is an HTML element or Surface component
+
+    children =
+      if render_contents_verbatim?(tag) do
+        # Don't tag the contents of this element; it's in a protected class
+        # of elements in which the contents are not supposed to be touched
+        # (such as <pre>).
+        #
+        # Note that since we're not tagging the whitespace (i.e. converting
+        # sections of the string to :newline and :space atoms), this means
+        # we can adjust the whitespace tags later and we're guaranteed not
+        # to accidentally modify the contents of these "render verbatim" tags.
+        children
+      else
+        # Recurse into tag_whitespace for all of the children of this element/component
+        # so that they get their whitespace tagged as well
+        Enum.flat_map(children, &tag_whitespace/1)
+      end
+
+    [{tag, attributes, children, meta}]
+  end
+
+  def tag_whitespace({:interpolation, _, _} = interpolation), do: [interpolation]
+
+  # Don't modify contents of macro components or <pre> and <code> tags
+  defp render_contents_verbatim?("#" <> _), do: true
+  defp render_contents_verbatim?("pre"), do: true
+  defp render_contents_verbatim?("code"), do: true
+  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
+
+  defp single_match!(regex, string) do
+    case Regex.run(regex, string) do
+      [match] -> match
+      nil -> nil
+    end
+  end
+
+  # Tag a string that only has whitespace, returning [:space] or a list of `:newline`
+  @spec tag_whitespace_string(String.t | nil) :: list(:space | :newline)
+  defp tag_whitespace_string(nil), do: []
+  defp tag_whitespace_string(text) when is_binary(text) do
+    # This span of text is _only_ whitespace
+    newlines =
+      text
+      |> String.graphemes()
+      |> Enum.count(&(&1 == "\n"))
+
+    if newlines > 0 do
+      List.duplicate(:newline, newlines)
+    else
+      [:space]
+    end
+  end
+
+  @spec adjust_whitespace([surface_node | whitespace]) :: [surface_node | whitespace]
+  def adjust_whitespace([]), do: []
+  def adjust_whitespace(nodes) when is_list(nodes) do
+    # These nodes are either the root nodes in an ~H sigil or .sface file,
+    # or they're all of the children of an HTML element / Surface component.
+
+    # Allow no more than 2 newlines in a row
+    nodes =
+      nodes
+      |> Enum.chunk_by(&(&1 == :newline))
+      |> Enum.map(fn
+        [:newline, :newline | _] -> [:newline, :newline]
+        nodes -> nodes
+      end)
+      |> Enum.flat_map(&Function.identity/1)
+
+    # Adjust whitespace of contents of child elements
+    nodes = Enum.map(nodes, fn
+      {tag, attributes, children, meta} ->
+        {tag, attributes, adjust_whitespace(children), meta}
+
+      node ->
+        node
+    end)
+
+    nodes = add_indentation(nodes)
+
+      # FIXME: I think here is where we need to ensure the contents of a tag are
+      # either smushed against the tags themselves, or the opening/closing tags
+      # are on different lines than the contents. In other words, this isn't
+      # allowed: <p> Contents </p>
+      # but this is: <p>contents</p>
+      # (The former would turn into:)
+      # <p>
+      #   Contents
+      # </p>
+
+      # FIXME: Also, is this where we would inject :indent and :indent_one_less tags
+      # before children and closing tags?
+
+      # FIXME: Also, this would probably be a good spot to ensure that
+      # child elements are placed on newlines if they contain other elements
+
+      ## Prevent empty line at beginning of children
+      #analyzed_children =
+        #case analyzed_children do
+          #[:newline, :newline | rest] -> [:newline | rest]
+          #_ -> analyzed_children
+        #end
+
+      ## Prevent empty line at end of children
+      #analyzed_children =
+        #case Enum.slice(analyzed_children, -2..-1) do
+          #[:newline, :newline] -> Enum.slice(analyzed_children, 0..-2)
+          #_ -> analyzed_children
+        #end
+  end
+
+  # By the time add_indentation is called, :newline elements have
+  # been reduced to at most 2 in a row.
+  def add_indentation(nodes, accumulated \\ [])
+  def add_indentation([:newline, :newline | rest], accumulated) do
+    # Two newlines in a row; don't add indentation on the empty line
+    add_indentation(rest, accumulated ++ [:newline, :newline, :indent])
+  end
+  def add_indentation([:newline], accumulated) do
+    # The last child is a newline; add indentation for closing tag
+    accumulated ++ [:newline, :indent_one_less]
+  end
+  def add_indentation([:newline | rest], accumulated) do
+    # Indent before the next child
+    add_indentation(rest, accumulated ++ [:newline, :indent])
+  end
+  def add_indentation([], accumulated) do
+    # We've traversed all the children; add indentation for closing tag
+    accumulated ++ [:indent_one_less]
+  end
+  def add_indentation([node | rest], accumulated) do
+    add_indentation(rest, accumulated ++ [node])
+  end
+
+  ##########################
+  ####### OLD CODE TO REMOVE #########
+  ##########################
+
+  # HAPPENED ORIGINALLY IN format/1
+      #|> parse_for_formatter()
+      #|> elem(1)
+      #|> parse_whitespace_for_nodes()
+      #|> old_transform_whitespace()
+
+    ## Add initial indentation
+    #[:indent | parsed]
 
   # Recurses over nodes, feeding them to parse_whitespace/3 with the
   # node immediately before and after for context.
@@ -108,7 +284,7 @@ defmodule Surface.Code.Formatter do
   def parse_whitespace_for_nodes([node | rest], parsed, last) do
     next = List.first(rest)
     parsed_node = parse_whitespace(node, last, next)
-    parse_whitespace_for_nodes(rest, parsed ++ parsed_node, node)
+    parse_whitespace_for_nodes(rest, parsed ++ parsed_node, parsed_node)
   end
 
   @doc """
@@ -141,7 +317,7 @@ defmodule Surface.Code.Formatter do
         if trailing_whitespace = Regex.run(~r/\s+$/, text) do
           trailing_whitespace
           |> List.first()
-          |> parse_only_whitespace("", next)
+          |> parse_only_whitespace(last, next)
         end
       ]
       |> List.flatten()
@@ -213,60 +389,60 @@ defmodule Surface.Code.Formatter do
   defp force_newline_separator_for?(_), do: false
 
   # This function takes an entire list of sibling nodes (often all the children of a parent node)
-  # and recursively iterates over them, "contextualizing" the whitespace by turning :newline and
-  # :space nodes into other contextualized nodes like :indent, based on the context.
-  @spec contextualize_whitespace(list(surface_node | parsed_whitespace)) :: list(formatter_node)
-  defp contextualize_whitespace(nodes, accumulated \\ [])
+  # and recursively iterates over them, transorming the whitespace where appropriate by adding
+  # indentation and newlines in certain places based on the context.
+  @spec old_transform_whitespace(list(surface_node | :newline | :space)) :: list(formatter_node)
+  defp old_transform_whitespace(nodes, accumulated \\ [])
 
-  defp contextualize_whitespace([:newline], accumulated) do
+  defp old_transform_whitespace([:newline], accumulated) do
     # This is a final newline before a closing tag; indent but one less than
     # the current level
     accumulated ++ [:newline, :indent_one_less]
   end
 
-  defp contextualize_whitespace([node], accumulated) do
+  defp old_transform_whitespace([node], accumulated) do
     # This is the final node
-    accumulated ++ [contextualize_whitespace_for_single_node(node)]
+    accumulated ++ [transform_whitespace_for_single_node(node)]
   end
 
-  defp contextualize_whitespace([:newline, :newline | rest], accumulated) do
+  defp old_transform_whitespace([:newline, :newline | rest], accumulated) do
     # 2 newlines in a row; don't put indentation on the empty line
     rest = Enum.drop_while(rest, &(&1 == :newline))
 
-    contextualize_whitespace(
+    old_transform_whitespace(
       [:newline | rest],
       accumulated ++ [:newline]
     )
   end
 
-  defp contextualize_whitespace([:newline | rest], accumulated) do
-    contextualize_whitespace(
+  defp old_transform_whitespace([:newline | rest], accumulated) do
+    old_transform_whitespace(
       rest,
       accumulated ++ [:newline, :indent]
     )
   end
 
-  defp contextualize_whitespace([node | rest], accumulated) do
-    contextualize_whitespace(
+  defp old_transform_whitespace([node | rest], accumulated) do
+    old_transform_whitespace(
       rest,
-      accumulated ++ [contextualize_whitespace_for_single_node(node)]
+      accumulated ++ [transform_whitespace_for_single_node(node)]
     )
   end
 
-  defp contextualize_whitespace([], accumulated) do
+  defp old_transform_whitespace([], accumulated) do
     accumulated
   end
 
   # This function allows us to operate deeply on nested children through recursion
-  @spec contextualize_whitespace_for_single_node(surface_node) :: surface_node
-  defp contextualize_whitespace_for_single_node({tag, attributes, children, meta}) do
+  @spec transform_whitespace_for_single_node(surface_node) :: surface_node
+  defp transform_whitespace_for_single_node({tag, attributes, children, meta}) do
     # HTML comments are stripped by Surface, and when this happens
     # the surrounding text are counted as separate nodes and not joined.
     # As a result, it's possible to end up with more than 2 consecutive
     # newlines. So here, we check for that and deduplicate them.
     children =
       children
-      |> contextualize_whitespace()
+      |> old_transform_whitespace()
       |> Enum.chunk_by(&(&1 == :newline))
       |> Enum.map(fn
         [:newline, :newline | _] ->
@@ -282,15 +458,21 @@ defmodule Surface.Code.Formatter do
     {tag, attributes, children, meta}
   end
 
-  defp contextualize_whitespace_for_single_node(node) do
+  defp transform_whitespace_for_single_node(node) do
     node
   end
 
-  # Take a formatter_node and return a formatted string
-  @spec render_node(formatter_node, list(option)) :: String.t() | nil
-  defp render_node(segment, opts)
 
-  defp render_node({:interpolation, expression, _meta}, opts) do
+
+  ##############################
+  ######### END OLD CODE TO REMOVE
+  ############################
+
+  # Take a formatter_node and return a formatted string
+  @spec render(formatter_node, list(option)) :: String.t() | nil
+  defp render(segment, opts)
+
+  defp render({:interpolation, expression, _meta}, opts) do
     formatted =
       expression
       |> String.trim()
@@ -303,30 +485,34 @@ defmodule Surface.Code.Formatter do
     )
   end
 
-  defp render_node(:indent, opts) do
-    String.duplicate(@tab, opts[:indent])
+  defp render(:indent, opts) do
+    if opts[:indent] >= 0 do
+      String.duplicate(@tab, opts[:indent])
+    else
+      ""
+    end
   end
 
-  defp render_node(:newline, _opts) do
+  defp render(:newline, _opts) do
     # There are multiple newlines in a row; don't add spaces
     # if there aren't going to be other characters after it
     "\n"
   end
 
-  defp render_node(:space, _opts) do
+  defp render(:space, _opts) do
     " "
   end
 
-  defp render_node(:indent_one_less, opts) do
+  defp render(:indent_one_less, opts) do
     # Dedent once; this is before a closing tag, so it should be dedented from children
-    render_node(:indent, indent: opts[:indent] - 1)
+    render(:indent, indent: opts[:indent] - 1)
   end
 
-  defp render_node(html, _opts) when is_binary(html) do
+  defp render(html, _opts) when is_binary(html) do
     html
   end
 
-  defp render_node({tag, attributes, children, _meta}, opts) do
+  defp render({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])
     rendered_attributes = Enum.map(attributes, &render_attribute/1)
@@ -448,12 +634,12 @@ defmodule Surface.Code.Formatter do
             html
 
           child ->
-            render_node(child, indent: 0)
+            render(child, indent: 0)
         end)
       else
         next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
 
-        Enum.map(children, &render_node(&1, next_opts))
+        Enum.map(children, &render(&1, next_opts))
       end
 
     if self_closing do
@@ -467,7 +653,7 @@ defmodule Surface.Code.Formatter do
           String.t() | {:do_not_indent_newlines, String.t()}
   defp render_attribute({name, value, _meta}) when is_binary(value) do
     # This is a string, and it might contain newlines. By returning
-    # `{:do_not_indent_newlines, formatted}` we instruct `render_node/1`
+    # `{:do_not_indent_newlines, formatted}` we instruct `render/1`
     # to leave newlines alone instead of adding extra tabs at the
     # beginning of the line.
     #
@@ -571,10 +757,4 @@ defmodule Surface.Code.Formatter do
 
     "#{name}=\"#{formatted_expressions}\""
   end
-
-  # Don't modify contents of macro components or <pre> and <code> tags
-  defp render_contents_verbatim?("#" <> _), do: true
-  defp render_contents_verbatim?("pre"), do: true
-  defp render_contents_verbatim?("code"), do: true
-  defp render_contents_verbatim?(tag) when is_binary(tag), do: false
 end

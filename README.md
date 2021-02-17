@@ -33,7 +33,7 @@ See `mix surface.format` for documentation of flags and configuration options.
 The formatter mostly follows these rules:
 
 - Only formats code inside of `~H"""` blocks and `.sface` files.
-- Child nodes are indented 2 spaces in from their parent.
+- Child nodes are typically indented 2 spaces in from their parent.
 - Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the
   [official Elixir formatter](https://hexdocs.pm/elixir/Code.html#format_string!/2).
 - HTML attributes are put on separate lines if the line is too long.
