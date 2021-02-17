@@ -24,7 +24,7 @@ defmodule Surface.Formatter.Phases.Newlines do
       nodes -> nodes
     end)
     |> Enum.flat_map(&Function.identity/1)
-    |> Phase.recurse_on_children(&collapse_newlines/1)
+    |> Phase.transform_element_children(&collapse_newlines/1)
   end
 
   defp prevent_empty_line_at_beginning(nodes) do
@@ -33,7 +33,7 @@ defmodule Surface.Formatter.Phases.Newlines do
       [:newline, :newline | rest] -> [:newline | rest]
       _ -> nodes
     end
-    |> Phase.recurse_on_children(&prevent_empty_line_at_beginning/1)
+    |> Phase.transform_element_children(&prevent_empty_line_at_beginning/1)
   end
 
   defp prevent_empty_line_at_end(nodes) do
@@ -43,6 +43,6 @@ defmodule Surface.Formatter.Phases.Newlines do
       [:newline, :newline] -> Enum.slice(nodes, 0..-2)
       _ -> nodes
     end
-    |> Phase.recurse_on_children(&prevent_empty_line_at_end/1)
+    |> Phase.transform_element_children(&prevent_empty_line_at_end/1)
   end
 end

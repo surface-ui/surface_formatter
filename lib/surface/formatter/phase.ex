@@ -13,10 +13,16 @@ defmodule Surface.Formatter.Phase do
   @doc "The function implementing the phase."
   @callback run([Formatter.formatter_node()]) :: [Formatter.formatter_node()]
 
-  def recurse_on_children(nodes, run) do
+  @doc """
+  Given a list of nodes, find all "element" nodes (HTML elements or Surface components)
+  and transform children of those nodes using the given function.
+
+  Useful for recursing deeply through the entire tree of nodes.
+  """
+  def transform_element_children(nodes, transform) do
     Enum.map(nodes, fn
       {tag, attributes, children, meta} ->
-        {tag, attributes, run.(children), meta}
+        {tag, attributes, transform.(children), meta}
 
       node ->
         node

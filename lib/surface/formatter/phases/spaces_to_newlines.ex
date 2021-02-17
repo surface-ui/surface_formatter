@@ -1,6 +1,13 @@
 defmodule Surface.Formatter.Phases.SpacesToNewlines do
   @moduledoc """
   In a variety of scenarios, converts :space nodes to :newline nodes.
+
+  (Below, "element" means an HTML element or a Surface component.)
+
+  1. If an element has a newline before, ensure it has a newline after.
+  1. If an element contains other elements as children, surround it with newlines.
+  1. If there is a space after an opening tag or before a closing tag, convert it to a newline.
+  1. If there is a closing tag on its own line, ensure there's a newline before the next sibling node.
   """
 
   @behaviour Surface.Formatter.Phase
@@ -33,7 +40,7 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
   end
 
   defp normalize_whitespace_surrounding_elements([], accumulated) do
-    Phase.recurse_on_children(
+    Phase.transform_element_children(
       accumulated,
       &normalize_whitespace_surrounding_elements/1
     )
@@ -81,7 +88,7 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
   end
 
   defp ensure_newlines_surrounding_elements_with_element_children([], accumulated) do
-    Phase.recurse_on_children(
+    Phase.transform_element_children(
       accumulated,
       &ensure_newlines_surrounding_elements_with_element_children/1
     )
@@ -110,7 +117,7 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
       end
 
     nodes
-    |> Phase.recurse_on_children(&convert_spaces_to_newlines_around_edge_children/1)
+    |> Phase.transform_element_children(&convert_spaces_to_newlines_around_edge_children/1)
   end
 
   # Basically makes sure that this
@@ -149,6 +156,9 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
   end
 
   defp move_siblings_after_lone_closing_tag_to_new_line([], accumulated) do
-    Phase.recurse_on_children(accumulated, &move_siblings_after_lone_closing_tag_to_new_line/1)
+    Phase.transform_element_children(
+      accumulated,
+      &move_siblings_after_lone_closing_tag_to_new_line/1
+    )
   end
 end

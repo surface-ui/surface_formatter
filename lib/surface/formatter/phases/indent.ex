@@ -1,7 +1,16 @@
 defmodule Surface.Formatter.Phases.Indent do
   @moduledoc """
-  Relies on `Newlines` phase, which collapses :newline nodes
-  to at most 2 in a row.
+  Adds indentation nodes (`:indent` and `:indent_one_less`) where appropriate.
+
+  `Surface.Formatter.Render.node/2` is responsible for adding the appropriate
+  level of indentation. It keeps track of the indentation level based on how
+  "nested" a node is. While running Formatter Phases, it's not necessary to
+  keep track of that detail.
+
+  `:indent_one_less` exists to notate the indentation that should occur before
+  a closing tag, which is one less than its children.
+
+  Relies on `Newlines` phase, which collapses :newline nodes to at most 2 in a row.
   """
 
   @behaviour Surface.Formatter.Phase
@@ -16,7 +25,7 @@ defmodule Surface.Formatter.Phases.Indent do
     # Deeply recurse through nodes and add indentation before newlines
     nodes
     |> add_indentation()
-    |> Phase.recurse_on_children(&indent/1)
+    |> Phase.transform_element_children(&indent/1)
   end
 
   def add_indentation(nodes, accumulated \\ [])

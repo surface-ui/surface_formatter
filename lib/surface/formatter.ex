@@ -4,6 +4,14 @@ defmodule Surface.Formatter do
   alias Surface.Formatter.{Phases, Render}
 
   @typedoc """
+  Options that can be passed to `Surface.Formatter.format_string/2`.
+
+    - `:line_length` - Maximum line length before wrapping opening tags
+    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
+  """
+  @type option :: {:line_length, integer} | {:indent, integer}
+
+  @typedoc """
   The name of an HTML/Surface tag, such as `div`, `ListItem`, or `#Markdown`
   """
   @type tag :: String.t()
@@ -26,16 +34,10 @@ defmodule Surface.Formatter do
           | {tag, list(attribute), list(surface_node), map}
 
   @typedoc """
-    - `:line_length` - Maximum line length before wrapping opening tags
-    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
-  """
-  @type option :: {:line_length, integer} | {:indent, integer}
+  Whitespace nodes that can be rendered by `Surface.Formatter.Render.node/2`.
 
-  @typedoc """
-  After whitespace is condensed down to `:newline` and `:space`, It's converted
-  to this type in a step that looks at the greater context of the whitespace
-  and decides where to add indentation (and how much indentation), and where to
-  split things onto separate lines.
+  The Surface parser does not return these, but formatter phases introduce these nodes
+  in preparation for rendering.
 
   - `:newline` adds a `\n` character
   - `:space` adds a ` ` (space) character
@@ -48,7 +50,7 @@ defmodule Surface.Formatter do
           | :indent
           | :indent_one_less
 
-  @type formatter_node :: Surface.Code.surface_node() | whitespace
+  @type formatter_node :: surface_node | whitespace
 
   @doc """
   Formats the given Surface code string. (Typically the contents of an `~H`
@@ -365,13 +367,14 @@ defmodule Surface.Formatter do
   are desired.
 
   """
-  @spec format_string!(String.t(), list(Surface.Code.Formatter.option())) :: String.t()
+  @spec format_string!(String.t(), list(option)) :: String.t()
   def format_string!(string, opts \\ []) do
     {:ok, parsed} =
       string
       |> String.trim()
       |> Surface.Compiler.Parser.parse()
 
+    # Ensure the :indent option is set
     opts = Keyword.put_new(opts, :indent, 0)
 
     [
@@ -393,7 +396,7 @@ defmodule Surface.Formatter do
   Returns true if the argument is an element (HTML element or surface
   component), false otherwise.
   """
-  @spec is_element?(surface_node) :: boolean()
+  @spec is_element?(surface_node) :: boolean
   def is_element?({_, _, _, _}), do: true
   def is_element?(_), do: false
 
@@ -401,6 +404,7 @@ defmodule Surface.Formatter do
   Given a tag, return whether to render the contens verbatim instead of formatting them.
   Specifically, don't modify contents of macro components or <pre> and <code> tags.
   """
+  @spec render_contents_verbatim?(tag) :: boolean
   def render_contents_verbatim?("#" <> _), do: true
   def render_contents_verbatim?("pre"), do: true
   def render_contents_verbatim?("code"), do: true
