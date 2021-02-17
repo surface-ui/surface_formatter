@@ -711,7 +711,7 @@ defmodule Surface.CodeTest do
     """)
   end
 
-  test "when elements aren't left on the same line, the next sibling is pushed to its own line" do
+  test "when element content and tags aren't left on the same line, the next sibling is pushed to its own line" do
     assert_formatter_outputs(
       """
       <div> <div> Hello </div> {{1 + 1}} <p>Goodbye</p> </div>

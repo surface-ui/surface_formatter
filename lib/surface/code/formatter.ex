@@ -35,8 +35,15 @@ defmodule Surface.Code.Formatter do
   @type formatter_node :: Surface.Code.surface_node() | whitespace
 
   alias Surface.Code.Formatter.Phases.{
+    CollapseNewlines,
     TagWhitespace,
-    SurroundingWhitespace
+    SurroundingWhitespace,
+    NormalizeWhitespaceSurroundingElements,
+    EnsureNewlinesSurroundingElementsWithElementChildren,
+    ConvertSpacesToNewlinesAroundEdgeElementChildren,
+    MoveSiblingsAfterLoneClosingTagToNewLine,
+    PreventLeadingAndTrailingEmptyLines,
+    Indent
   }
 
   @doc "Given a list of `t:formatter_node/0`, return a formatted string of Surface code"
@@ -46,7 +53,6 @@ defmodule Surface.Code.Formatter do
 
     nodes
     |> run_phases()
-    |> adjust_whitespace()
     |> Enum.map(&render(&1, opts))
     |> List.flatten()
     # Add final newline
@@ -63,7 +69,14 @@ defmodule Surface.Code.Formatter do
   defp phases do
     [
       TagWhitespace,
-      SurroundingWhitespace
+      SurroundingWhitespace,
+      CollapseNewlines,
+      NormalizeWhitespaceSurroundingElements,
+      EnsureNewlinesSurroundingElementsWithElementChildren,
+      ConvertSpacesToNewlinesAroundEdgeElementChildren,
+      MoveSiblingsAfterLoneClosingTagToNewLine,
+      PreventLeadingAndTrailingEmptyLines,
+      Indent
     ]
   end
 
@@ -75,201 +88,6 @@ defmodule Surface.Code.Formatter do
   def render_contents_verbatim?("pre"), do: true
   def render_contents_verbatim?("code"), do: true
   def render_contents_verbatim?(tag) when is_binary(tag), do: false
-
-  @spec adjust_whitespace([Surface.Code.surface_node() | whitespace]) :: [
-          Surface.Code.surface_node() | whitespace
-        ]
-  def adjust_whitespace([]), do: []
-
-  def adjust_whitespace(nodes) when is_list(nodes) do
-    # These nodes are either the root nodes in an ~H sigil or .sface file,
-    # or they're all of the children of an HTML element / Surface component.
-
-    # Allow no more than 2 newlines in a row
-    nodes
-    |> collapse_newlines()
-    |> adjust_whitespace_of_children()
-    |> normalize_whitespace_surrounding_elements()
-    |> convert_some_spaces_to_newlines_recursive()
-    |> convert_spaces_to_newlines_around_edge_element_children()
-    |> move_siblings_after_lone_closing_tag_to_new_line()
-    |> prevent_empty_line_at_beginning()
-    |> prevent_empty_line_at_end()
-    |> add_indentation()
-  end
-
-  defp collapse_newlines(nodes) do
-    nodes
-    |> Enum.chunk_by(&(&1 == :newline))
-    |> Enum.map(fn
-      [:newline, :newline | _] -> [:newline, :newline]
-      nodes -> nodes
-    end)
-    |> Enum.flat_map(&Function.identity/1)
-  end
-
-  defp adjust_whitespace_of_children(nodes) do
-    Enum.map(nodes, fn
-      {tag, attributes, children, meta} ->
-        {tag, attributes, adjust_whitespace(children), meta}
-
-      node ->
-        node
-    end)
-  end
-
-  defp normalize_whitespace_surrounding_elements(nodes, accumulated \\ [])
-
-  defp normalize_whitespace_surrounding_elements(
-         [:newline, {_, _, _, _} = element, :space | rest],
-         accumulated
-       ) do
-    # Ensures that if there's an HTML element / Surface component with
-    # a newline before it, there will be a newline after as well.
-    normalize_whitespace_surrounding_elements(
-      rest,
-      accumulated ++ [:newline, element, :newline]
-    )
-  end
-
-  defp normalize_whitespace_surrounding_elements([node | rest], accumulated) do
-    normalize_whitespace_surrounding_elements(rest, accumulated ++ [node])
-  end
-
-  defp normalize_whitespace_surrounding_elements([], accumulated) do
-    accumulated
-  end
-
-  defp convert_spaces_to_newlines_around_edge_element_children(nodes) do
-    # If there is a space before the first child, and it's an element, convert it to a newline
-    nodes =
-      case nodes do
-        [:space, element | rest] ->
-          [:newline, element | rest]
-
-        _ ->
-          nodes
-      end
-
-    # If there is a space before the first child, and it's an element, convert it to a newline
-    case Enum.reverse(nodes) do
-      [:space, element | _rest] ->
-        Enum.slice(nodes, 0..-3) ++ [element, :newline]
-
-      _ ->
-        nodes
-    end
-  end
-
-  defp convert_some_spaces_to_newlines_recursive(nodes, accumulated \\ [])
-
-  defp convert_some_spaces_to_newlines_recursive(
-         [:space, {_, _, children, _} = element, :space | rest],
-         accumulated
-       ) do
-    whitespace =
-      if Enum.any?(children, &Surface.Code.is_element?/1) do
-        :newline
-      else
-        :space
-      end
-
-    convert_some_spaces_to_newlines_recursive(
-      rest,
-      accumulated ++ [whitespace, element, whitespace]
-    )
-  end
-
-  defp convert_some_spaces_to_newlines_recursive(
-         [{_, _, children, _} = element, :space | rest],
-         accumulated
-       ) do
-    whitespace =
-      if Enum.any?(children, &Surface.Code.is_element?/1) do
-        :newline
-      else
-        :space
-      end
-
-    convert_some_spaces_to_newlines_recursive(
-      rest,
-      accumulated ++ [element, whitespace]
-    )
-  end
-
-  defp convert_some_spaces_to_newlines_recursive([node | rest], accumulated) do
-    convert_some_spaces_to_newlines_recursive(rest, accumulated ++ [node])
-  end
-
-  defp convert_some_spaces_to_newlines_recursive([], accumulated) do
-    accumulated
-  end
-
-  defp move_siblings_after_lone_closing_tag_to_new_line(nodes, accumulated \\ [])
-
-  defp move_siblings_after_lone_closing_tag_to_new_line(
-         [{_, _, children, _} = element, :space | rest],
-         accumulated
-       ) do
-    if Enum.any?(children, &(&1 == :newline)) do
-      move_siblings_after_lone_closing_tag_to_new_line(
-        rest,
-        accumulated ++ [element, :newline]
-      )
-    else
-      move_siblings_after_lone_closing_tag_to_new_line(
-        rest,
-        accumulated ++ [element, :space]
-      )
-    end
-  end
-
-  defp move_siblings_after_lone_closing_tag_to_new_line([node | rest], accumulated) do
-    move_siblings_after_lone_closing_tag_to_new_line(rest, accumulated ++ [node])
-  end
-
-  defp move_siblings_after_lone_closing_tag_to_new_line([], accumulated) do
-    accumulated
-  end
-
-  defp prevent_empty_line_at_beginning([:newline, :newline | rest]), do: [:newline | rest]
-  defp prevent_empty_line_at_beginning(nodes), do: nodes
-
-  defp prevent_empty_line_at_end(nodes) do
-    case Enum.slice(nodes, -2..-1) do
-      [:newline, :newline] -> Enum.slice(nodes, 0..-2)
-      _ -> nodes
-    end
-  end
-
-  # By the time add_indentation is called, :newline elements have
-  # been reduced to at most 2 in a row.
-  def add_indentation(nodes, accumulated \\ [])
-
-  def add_indentation([:newline, :newline | rest], accumulated) do
-    # Two newlines in a row; don't add indentation on the empty line
-    add_indentation(rest, accumulated ++ [:newline, :newline, :indent])
-  end
-
-  def add_indentation([:newline], accumulated) do
-    # The last child is a newline; add indentation for closing tag
-    accumulated ++ [:newline, :indent_one_less]
-  end
-
-  def add_indentation([:newline | rest], accumulated) do
-    # Indent before the next child
-    add_indentation(rest, accumulated ++ [:newline, :indent])
-  end
-
-  def add_indentation([], accumulated) do
-    # We've traversed all the children; no need to add indentation for closing tag
-    # because that's handled in the clause where :newline is the last node
-    accumulated
-  end
-
-  def add_indentation([node | rest], accumulated) do
-    add_indentation(rest, accumulated ++ [node])
-  end
 
   # Take a formatter_node and return a formatted string
   @spec render(formatter_node, list(option)) :: String.t() | nil

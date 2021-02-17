@@ -12,4 +12,14 @@ defmodule Surface.Code.Formatter.Phase do
 
   @doc "The function implementing the phase."
   @callback run([Formatter.formatter_node()]) :: [Formatter.formatter_node()]
+
+  def recurse_on_children(nodes, run) do
+    Enum.map(nodes, fn
+      {tag, attributes, children, meta} ->
+        {tag, attributes, run.(children), meta}
+
+      node ->
+        node
+    end)
+  end
 end
