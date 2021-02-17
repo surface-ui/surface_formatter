@@ -697,7 +697,7 @@ defmodule Surface.FormatterTest do
     )
   end
 
-  test "inline elements mixed with text are left on the same line unless max width is violated" do
+  test "inline elements mixed with text are left on the same line by default" do
     assert_formatter_doesnt_change("""
     The <b>Dialog</b> is a stateless component. All event handlers
     had to be defined in the parent <b>LiveView</b>.
@@ -710,6 +710,22 @@ defmodule Surface.FormatterTest do
 
     assert_formatter_doesnt_change("""
     This <b>Dialog</b> is a stateful component. Cool!
+    """)
+
+    assert_formatter_doesnt_change("""
+    <Card>
+      <Header>
+        A simple card component
+      </Header>
+
+      This is the same Card component but now we're using
+      <strong>typed slotables</strong> instead of <strong>templates</strong>.
+
+      <Footer>
+        <a href="#" class="card-footer-item">Footer Item 1</a>
+        <a href="#" class="card-footer-item">Footer Item 2</a>
+      </Footer>
+    </Card>
     """)
   end
 

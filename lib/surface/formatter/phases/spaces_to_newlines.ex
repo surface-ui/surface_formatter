@@ -4,7 +4,6 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
 
   (Below, "element" means an HTML element or a Surface component.)
 
-  1. If an element has a newline before, ensure it has a newline after.
   1. If an element contains other elements as children, surround it with newlines.
   1. If there is a space after an opening tag or before a closing tag, convert it to a newline.
   1. If there is a closing tag on its own line, ensure there's a newline before the next sibling node.
@@ -15,35 +14,9 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
 
   def run(nodes) do
     nodes
-    |> normalize_whitespace_surrounding_elements()
     |> ensure_newlines_surrounding_elements_with_element_children()
     |> convert_spaces_to_newlines_around_edge_children()
     |> move_siblings_after_lone_closing_tag_to_new_line()
-  end
-
-  # Ensures that if there's an HTML element / Surface component with
-  # a newline before it, there will be a newline after as well.
-  defp normalize_whitespace_surrounding_elements(nodes, accumulated \\ [])
-
-  defp normalize_whitespace_surrounding_elements(
-         [:newline, {_, _, _, _} = element, :space | rest],
-         accumulated
-       ) do
-    normalize_whitespace_surrounding_elements(
-      rest,
-      accumulated ++ [:newline, element, :newline]
-    )
-  end
-
-  defp normalize_whitespace_surrounding_elements([node | rest], accumulated) do
-    normalize_whitespace_surrounding_elements(rest, accumulated ++ [node])
-  end
-
-  defp normalize_whitespace_surrounding_elements([], accumulated) do
-    Phase.transform_element_children(
-      accumulated,
-      &normalize_whitespace_surrounding_elements/1
-    )
   end
 
   # If an element has an element as a child, ensure it's surrounded by newlines, not spaces

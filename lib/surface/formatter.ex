@@ -151,7 +151,6 @@ defmodule Surface.Formatter do
 
   (Below, "element" means an HTML element or a Surface component.)
 
-  1. If an element has a newline before, the formatter will ensure there is a newline after it.
   1. If an element contains other elements as children, it will be surrounded by newlines.
   1. If there is a space after an opening tag or before a closing tag, it is converted to a newline.
   1. If a closing tag is put on its own line, the formatter ensures there's a newline before the next sibling node.
