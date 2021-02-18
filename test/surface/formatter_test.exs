@@ -870,4 +870,15 @@ defmodule Surface.FormatterTest do
       """
     )
   end
+
+  test "(bugfix) magic keyword lists with interpolated string keys are correctly identified and don't crash" do
+    assert_formatter_outputs(
+      ~S"""
+      <Component attr={{"a-#{@b}": c}} />
+      """,
+      ~S"""
+      <Component attr={{ "a-#{@b}": c }} />
+      """
+    )
+  end
 end
