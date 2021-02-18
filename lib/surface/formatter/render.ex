@@ -253,7 +253,9 @@ defmodule Surface.Formatter.Render do
         # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
         has_invisible_brackets =
           Keyword.keyword?(quoted_wrapped_expression) or
-            (is_list(quoted_wrapped_expression) and length(quoted_wrapped_expression) > 1)
+            (is_list(quoted_wrapped_expression) and length(quoted_wrapped_expression) > 1) or
+            (is_list(quoted_wrapped_expression) and
+               Enum.any?(quoted_wrapped_expression, &is_keyword_item_with_interpolated_key?/1))
 
         formatted_expression =
           if has_invisible_brackets do
@@ -300,5 +302,12 @@ defmodule Surface.Formatter.Render do
       |> Enum.join()
 
     "#{name}=\"#{formatted_expressions}\""
+  end
+
+  defp is_keyword_item_with_interpolated_key?(item) do
+    case item do
+      {{{:., _, [:erlang, :binary_to_atom]}, _, [_, :utf8]}, _} -> true
+      _ -> false
+    end
   end
 end
