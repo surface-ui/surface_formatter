@@ -163,7 +163,7 @@ defmodule Surface.Formatter.Render do
           tag <>
           attributes <>
           "#{
-            if self_closing do
+            if self_closing and not is_void_element?(tag) do
               " /"
             end
           }>"
@@ -309,5 +309,9 @@ defmodule Surface.Formatter.Render do
       {{{:., _, [:erlang, :binary_to_atom]}, _, [_, :utf8]}, _} -> true
       _ -> false
     end
+  end
+
+  defp is_void_element?(tag) do
+    tag in ~w(area base br col hr img input link meta param command keygen source)
   end
 end

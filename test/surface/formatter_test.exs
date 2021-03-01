@@ -881,4 +881,39 @@ defmodule Surface.FormatterTest do
       """
     )
   end
+
+  test "void elements do not have slash in single tag" do
+    assert_formatter_outputs(
+      """
+      <area />
+      <base />
+      <br />
+      <col />
+      <hr />
+      <img />
+      <input />
+      <link />
+      <meta />
+      <param />
+      <command />
+      <keygen />
+      <source />
+      """,
+      """
+      <area>
+      <base>
+      <br>
+      <col>
+      <hr>
+      <img>
+      <input>
+      <link>
+      <meta>
+      <param>
+      <command>
+      <keygen>
+      <source>
+      """
+    )
+  end
 end
