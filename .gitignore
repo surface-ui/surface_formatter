@@ -22,6 +22,9 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 surface_formatter-*.tar
 
-
 # Temporary files for e.g. tests
 /tmp
+
+# ElixirLS directory
+.elixir_ls/
+
