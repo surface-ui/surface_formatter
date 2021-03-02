@@ -1,7 +1,7 @@
 defmodule Surface.Formatter.Phase do
   @moduledoc """
   A phase implementing a single "rule" for formatting code. These work as middleware
-  between `Surface.Compiler.Parser.parse/1` and `Surface.Formatter.Render.node/2`
+  between `Surface.Compiler.Parser.parse` and `Surface.Formatter.Render.node/2`
   to modify node lists before they are rendered.
 
   Some phases rely on other phases; `@moduledoc`s should make this explicit.

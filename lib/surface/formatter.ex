@@ -4,7 +4,7 @@ defmodule Surface.Formatter do
   alias Surface.Formatter.{Phases, Render}
 
   @typedoc """
-  Options that can be passed to `Surface.Formatter.format_string/2`.
+  Options that can be passed to `Surface.Formatter.format_string!/2`.
 
     - `:line_length` - Maximum line length before wrapping opening tags
     - `:indent` - Starting indentation depth depending on the context of the ~H sigil
@@ -27,7 +27,7 @@ defmodule Surface.Formatter do
   @typedoc "A parsed HTML/Component attribute name and value."
   @type attribute :: {name :: String.t(), attribute_value, term}
 
-  @typedoc "A node output by `Surface.Compiler.Parser.parse/1`."
+  @typedoc "A node output by `Surface.Compiler.Parser.parse`."
   @type surface_node ::
           String.t()
           | {:interpolation, String.t(), map}
@@ -53,7 +53,7 @@ defmodule Surface.Formatter do
   @typedoc """
   A node that will ultimately be sent to `Surface.Formatter.Render.node/2` for rendering.
 
-  The output of `Surface.Compiler.Parser.parse/1` is ran through the various formatting
+  The output of `Surface.Compiler.Parser.parse` is ran through the various formatting
   phases, which ultimately output a tree of this type.
   """
   @type formatter_node :: surface_node | whitespace

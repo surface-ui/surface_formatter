@@ -15,8 +15,8 @@ defmodule Surface.Formatter.Phases.TagWhitespace do
   end
 
   @doc """
-  This function takes a node provided by `Surface.Compiler.Parser.parse/1`
-  and converts the leading/trailing whitespace into `t:whitespace/0` nodes.
+  This function takes a node provided by `Surface.Compiler.Parser.parse`
+  and converts the leading/trailing whitespace into `t:Surface.Formatter.whitespace/0` nodes.
   """
   @spec tag_whitespace(Formatter.surface_node()) :: [
           Formatter.surface_node() | :newline | :space
