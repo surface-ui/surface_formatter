@@ -15,7 +15,7 @@ Add as a dependency in `mix.exs`:
 ```elixir
 defp deps do
   [
-    {:surface_formatter, "~> 0.2.2"}
+    {:surface_formatter, "~> 0.3.0"}
   ]
 end
 ```

@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.0 (2021-03-02)
+
+  * Require Surface `v0.3.0` (#11)
+  * Do not add trailing slash in void elements without a closing tag (#12)
+
 ## v0.2.2 (2021-02-17)
 
   * Fix crash whenever bracket-less keyword lists in attributes contained an interpolation in a key (#9)
