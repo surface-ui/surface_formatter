@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.1 (2021-03-06)
+
+  * Require Surface `v0.3.1` (#13)
+  * Update list of void elements per Surface `v0.3.1` (#14)
+
 ## v0.3.0 (2021-03-02)
 
   * Require Surface `v0.3.0` (#11)
