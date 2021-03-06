@@ -312,6 +312,6 @@ defmodule Surface.Formatter.Render do
   end
 
   defp is_void_element?(tag) do
-    tag in ~w(area base br col hr img input link meta param command keygen source)
+    tag in ~w(area base br col command embed hr img input keygen link meta param source track wbr)
   end
 end
