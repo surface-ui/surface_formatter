@@ -34,7 +34,7 @@ defmodule SurfaceFormatter.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:surface, "~> 0.3.0"},
+      {:surface, "~> 0.3.1"},
       {:ex_doc, ">= 0.19.0", only: [:dev, :docs], runtime: false}
     ]
   end
