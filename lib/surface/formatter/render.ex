@@ -47,6 +47,10 @@ defmodule Surface.Formatter.Render do
     " "
   end
 
+  def node({:comment, comment}, _opts) do
+    comment
+  end
+
   def node(:indent_one_less, opts) do
     # Dedent once; this is before a closing tag, so it should be dedented from children
     node(:indent, indent: opts[:indent] - 1)
