@@ -660,6 +660,7 @@ defmodule Surface.FormatterTest do
       <div>
         <Component />
 
+        <!-- Comment -->
         <AfterComment />
       </div>
       """
@@ -798,6 +799,7 @@ defmodule Surface.FormatterTest do
         causing_this_line_to_wrap
         because_it_is_too_long="yes, this line is long enough to wrap"
       >
+        <!-- An HTML comment -->
         {{ # An Elixir comment }}
 
         <div :if={{ @show_div }} class="container">

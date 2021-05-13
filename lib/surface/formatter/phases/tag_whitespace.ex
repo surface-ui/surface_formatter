@@ -77,6 +77,7 @@ defmodule Surface.Formatter.Phases.TagWhitespace do
   end
 
   def tag_whitespace({:interpolation, _, _} = interpolation), do: [interpolation]
+  def tag_whitespace({:comment, _} = comment), do: [comment]
 
   # Tag a string that only has whitespace, returning [:space] or a list of `:newline`
   @spec tag_whitespace_string(String.t() | nil) :: list(:space | :newline)
