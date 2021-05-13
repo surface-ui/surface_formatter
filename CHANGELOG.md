@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.3.2 (2021-05-06)
+## v0.4.1 (2021-05-13)
+
+  * Fix crash related to HTML comments `<!-- -->` (#17)
+
+## v0.4.0 (2021-05-06)
 
   * Require Surface `v0.4.0` (#16)
 
