@@ -8,27 +8,45 @@ on:
 
 jobs:
   ci:
-
     name: Build and test
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: 1.11.1
+            otp: 21.3.8.17
+            warnings-as-errors: true
+          - elixir: 1.11.4
+            otp: 23.2
+            check_formatted: true
+            warnings-as-errors: true
+          - elixir: 1.12.0-rc.0
+            otp: 24.0-rc3
 
     env:
       MIX_ENV: test
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Elixir
-        uses: erlef/setup-beam@v1
+      - uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.10.3' # Define the elixir version [required]
-          otp-version: '22.3' # Define the OTP version [required]
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+          experimental-otp: true
       - name: Restore dependencies cache
         uses: actions/cache@v2
         with:
           path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
+
       - run: mix format --check-formatted
-      - name: Install dependencies
-        run: mix deps.get
+        if: matrix.check_formatted
+      - name: Install Dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --only test
       - run: mix compile --warnings-as-errors
+        if: matrix.warnings_as_errors
       - run: mix test
