@@ -73,6 +73,7 @@ will be formatted like this:
   causing_this_line_to_wrap
   because_it_is_too_long="yes, this line is long enough to wrap"
 >
+  <!-- An HTML comment -->
   {{ # An Elixir comment }}
 
   <div :if={{ @show_div }} class="container">

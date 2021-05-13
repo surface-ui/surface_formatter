@@ -308,37 +308,6 @@ defmodule Surface.Formatter do
   ]
   ```
 
-  ### HTML Comments
-
-  The formatter removes HTML comments. This is because the Surface parser
-  (which SurfaceFormatter uses under the hood) does not expose them.
-
-  This means
-
-  ```html
-  <div>
-    <!-- Some comment -->
-    <p>Hello</p>
-  </div>
-  ```
-
-  becomes
-
-  ```html
-  <div>
-    <p>Hello</p>
-  </div>
-  ```
-
-  It is recommended to use an interpolated Elixir comment instead:
-
-  ```html
-  <div>
-    {{ # Some comment }}
-    <p>Hello</p>
-  </div>
-  ```
-
   As with all changes (for both `mix format` and `mix surface.format`) it's
   recommended that developers don't blindly run the formatter on an entire
   codebase and commit, but instead sanity check each file to ensure the results
