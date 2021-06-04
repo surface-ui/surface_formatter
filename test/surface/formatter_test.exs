@@ -822,6 +822,48 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+
+    test "dynamic attributes are formatted" do
+      assert_formatter_outputs(
+        """
+        <Foo { ... @bar } />
+        """,
+        """
+        <Foo {...@bar} />
+        """
+      )
+    end
+
+    test "shorthand assigns passthrough attributes are formatted" do
+      assert_formatter_outputs(
+        """
+        <Foo {= @bar} />
+        """,
+        """
+        <Foo {=@bar} />
+        """
+      )
+
+      assert_formatter_outputs(
+        """
+        <Foo bar={@bar} />
+        """,
+        """
+        <Foo {=@bar} />
+        """
+      )
+    end
+
+    test "root prop is formatted" do
+      assert_formatter_outputs(
+        """
+        <MyIf { @var  >  10 } />
+        """,
+        """
+        <MyIf {@var > 10} />
+        """
+      )
+    end
   end
 
   test "self closing macro components are preserved" do

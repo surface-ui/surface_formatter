@@ -297,11 +297,22 @@ defmodule Surface.Formatter.Render do
             |> to_string()
           else
             expression
-            |> Code.format_string!()
+            |> Code.format_string!(locals_without_parens: [...: 1])
             |> to_string()
           end
 
-        "#{name}={#{formatted_expression}}"
+        if name == :root do
+          case formatted_expression do
+            "... " <> expression -> "{...#{expression}}"
+            expression -> "{#{expression}}"
+          end
+        else
+          if formatted_expression == "@#{name}" do
+            "{=@#{name}}"
+          else
+            "#{name}={#{formatted_expression}}"
+          end
+        end
     end
   end
 
