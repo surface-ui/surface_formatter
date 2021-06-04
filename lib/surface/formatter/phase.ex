@@ -38,6 +38,9 @@ defmodule Surface.Formatter.Phase do
       {tag, attributes, children, meta} ->
         {tag, attributes, transform.(children), meta}
 
+      {:block, name, expr, children, meta} ->
+        {:block, name, expr, transform.(children), meta}
+
       node ->
         node
     end)

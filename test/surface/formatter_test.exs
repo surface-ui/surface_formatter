@@ -832,6 +832,15 @@ defmodule Surface.FormatterTest do
         <Foo {...@bar} />
         """
       )
+
+      assert_formatter_outputs(
+        """
+        <div { ... @attrs } />
+        """,
+        """
+        <div {...@attrs} />
+        """
+      )
     end
 
     test "shorthand assigns passthrough attributes are formatted" do
@@ -861,6 +870,93 @@ defmodule Surface.FormatterTest do
         """,
         """
         <MyIf {@var > 10} />
+        """
+      )
+    end
+
+    test "if..elseif..else../if block expressions" do
+      assert_formatter_outputs(
+        """
+        {#if @value == 0}
+          <div class="equal">
+            Value {@value} is 0
+          </div>
+        {#elseif @value > 0}
+          <div class="greater">
+            Value {@value} is greater than 0
+          </div>
+        {#else}
+          <div class="lower">
+            Value {@value} is lower than 0
+          </div>
+        {/if}
+        """,
+        """
+        {#if @value == 0}
+          <div class="equal">
+            Value {@value} is 0
+          </div>
+        {#elseif @value > 0}
+          <div class="greater">
+            Value {@value} is greater than 0
+          </div>
+        {#else}
+          <div class="lower">
+            Value {@value} is lower than 0
+          </div>
+        {/if}
+        """
+      )
+    end
+
+    test "for..else../for block expressions" do
+      assert_formatter_outputs(
+        """
+        {#for item <- @items}
+          Item: {item}
+        {#else}
+          No items
+        {/for}
+        """,
+        """
+        {#for item <- @items}
+          Item: {item}
+        {#else}
+          No items
+        {/for}
+        """
+      )
+    end
+
+    test "case block expressions" do
+      assert_formatter_outputs(
+        """
+        {#case @value}
+          {#match [first|_]}
+            <div {=@class}>
+              First {first}
+            </div>
+          {#match []}
+            <div {=@class}>
+              Value is empty
+            </div>
+          {#match _}
+            Value is something else
+        {/case}
+        """,
+        """
+        {#case @value}
+          {#match [first|_]}
+            <div {=@class}>
+              First {first}
+            </div>
+          {#match []}
+            <div {=@class}>
+              Value is empty
+            </div>
+          {#match _}
+            Value is something else
+        {/case}
         """
       )
     end

@@ -91,6 +91,38 @@ defmodule Surface.Formatter.Render do
     html
   end
 
+  def node({:block, :default, [], children, _meta}, opts) do
+    next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
+    Enum.map(children, &node(&1, next_opts))
+  end
+
+  def node({:block, name, expr, body, _meta}, opts) do
+    main_block_element = name in ["if", "for", "case"]
+
+    expr = case expr do
+      [{:root, {:attribute_expr, expr, _meta}, __meta}] -> expr
+      [] -> nil
+    end
+
+    opening = "{##{name}#{if expr do " " <> expr end}}"
+
+    child_indentation =
+      if main_block_element do
+        0
+      else
+        if name == "match" do
+          2
+        else
+          1
+        end
+      end
+
+    next_opts = Keyword.update(opts, :indent, 0, &(&1 + child_indentation))
+    rendered_children = Enum.map(body, &node(&1, next_opts))
+
+    "#{opening}#{rendered_children}#{if main_block_element do "{/#{name}}" end}"
+  end
+
   def node({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])

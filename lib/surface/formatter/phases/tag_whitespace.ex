@@ -70,10 +70,14 @@ defmodule Surface.Formatter.Phases.TagWhitespace do
       else
         # Recurse into tag_whitespace for all of the children of this element/component
         # so that they get their whitespace tagged as well
-        Enum.flat_map(children, &tag_whitespace/1)
+        run(children)
       end
 
     [{tag, attributes, children, meta}]
+  end
+
+  def tag_whitespace({:block, name, expr, body, meta}) when is_list(body) do
+    [{:block, name, expr, run(body), meta}]
   end
 
   def tag_whitespace({:expr, _, _} = interpolation), do: [interpolation]
