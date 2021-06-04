@@ -48,8 +48,8 @@ Out of the box, Surface code that looks like this:
 
 ```html
  <RootComponent with_many_attributes={ true } causing_this_line_to_wrap={ true} because_it_is_too_long={ "yes, this line is long enough to wrap" }>
-   <!-- HTML public comment (hits the browser) -->
-   {!-- Surface private comment (does not hit the browser) --}
+   <!--   HTML public comment (hits the browser)   -->
+   {!--   Surface private comment (does not hit the browser)   --}
 
 
 
