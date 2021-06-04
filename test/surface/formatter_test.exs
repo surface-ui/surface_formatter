@@ -670,13 +670,13 @@ defmodule Surface.FormatterTest do
     )
   end
 
-  test "an interpolation with only a code comment is formatted" do
+  test "an expression with only a code comment is turned into a Surface code comment" do
     assert_formatter_outputs(
       """
       { # Foo}
       """,
       """
-      { # Foo }
+      {!-- Foo --}
       """
     )
   end

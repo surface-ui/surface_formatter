@@ -17,16 +17,23 @@ defmodule Surface.Formatter.Render do
   def node(segment, opts)
 
   def node({:expr, expression, _meta}, opts) do
-    formatted =
-      expression
-      |> String.trim()
-      |> Code.format_string!(opts)
+    case Regex.run(~r/^\s*#(.*)$/, expression) do
+      nil ->
+        formatted =
+          expression
+          |> String.trim()
+          |> Code.format_string!(opts)
 
-    String.replace(
-      "{ #{formatted} }",
-      "\n",
-      "\n#{String.duplicate(@tab, opts[:indent])}"
-    )
+        String.replace(
+          "{#{formatted}}",
+          "\n",
+          "\n#{String.duplicate(@tab, opts[:indent])}"
+        )
+
+      [_, comment] ->
+        # expression is a one-line Elixir comment; convert to a "Surface comment"
+        "{!-- #{String.trim(comment)} --}"
+    end
   end
 
   def node(:indent, opts) do
