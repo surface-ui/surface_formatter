@@ -228,7 +228,10 @@ defmodule Surface.Formatter.Render do
     do: "#{name}"
 
   defp attribute({name, false, _meta}),
-    do: "#{name}=false"
+    do: "#{name}={false}"
+
+  defp attribute({name, value, _meta}) when is_integer(value),
+    do: "#{name}={#{Code.format_string!("#{value}")}}"
 
   defp attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
        when is_binary(expression) do
