@@ -118,11 +118,9 @@ defmodule Surface.Formatter.Render do
       "<" <>
         tag <>
         attributes_on_same_line <>
-        "#{
-          if self_closing do
-            " /"
-          end
-        }>"
+        "#{if self_closing do
+          " /"
+        end}>"
 
     line_length = opts[:line_length] || @default_line_length
     attributes_contain_newline = String.contains?(attributes_on_same_line, "\n")
@@ -160,11 +158,9 @@ defmodule Surface.Formatter.Render do
         [
           "<#{tag}",
           indented_attributes,
-          "#{indentation}#{
-            if self_closing do
-              "/"
-            end
-          }>"
+          "#{indentation}#{if self_closing do
+            "/"
+          end}>"
         ]
         |> List.flatten()
         |> Enum.join("\n")
@@ -197,11 +193,9 @@ defmodule Surface.Formatter.Render do
         "<" <>
           tag <>
           attributes <>
-          "#{
-            if self_closing and not is_void_element?(tag) do
-              " /"
-            end
-          }>"
+          "#{if self_closing and not is_void_element?(tag) do
+            " /"
+          end}>"
       end
 
     rendered_children =

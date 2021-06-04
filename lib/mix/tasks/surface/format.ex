@@ -84,10 +84,8 @@ defmodule Mix.Tasks.Surface.Format do
 
       opts = Keyword.put(opts, :indent, tabs)
 
-      "\n#{indentation}~H\"\"\"\n#{
-        surface_code
-        |> Formatter.format_string!(opts)
-      }#{indentation}\"\"\""
+      "\n#{indentation}~H\"\"\"\n#{surface_code
+      |> Formatter.format_string!(opts)}#{indentation}\"\"\""
     end)
   end
 
