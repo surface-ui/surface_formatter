@@ -53,7 +53,7 @@ Out of the box, Surface code that looks like this:
 
 
 
-   <div :if={@show_div}
+   <div :if={ @show_div }
    class="container">
        <p> Text inside paragraph    </p>
     <span>Text touching parent tags</span>
@@ -76,7 +76,7 @@ will be formatted like this:
   <!-- HTML public comment (hits the browser) -->
   {!-- Surface private comment (does not hit the browser) --}
 
-  <div :if={ @show_div } class="container">
+  <div :if={@show_div} class="container">
     <p>
       Text inside paragraph
     </p>

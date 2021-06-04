@@ -41,7 +41,7 @@ defmodule Surface.FormatterTest do
     )
   end
 
-  test "Surface brackets for Elixir code still include the original code snippet" do
+  test "Elixir expressions retain the original code snippet" do
     assert_formatter_outputs(
       """
           <div :if = {1 + 1      }>
@@ -53,8 +53,8 @@ defmodule Surface.FormatterTest do
 
       """,
       """
-      <div :if={ 1 + 1 }>
-        { "hello " <> "dolly" }
+      <div :if={1 + 1}>
+        {"hello " <> "dolly"}
       </div>
       """
     )
@@ -100,27 +100,27 @@ defmodule Surface.FormatterTest do
       """,
       """
       <div>
-        <dt>{ @tldr }/{ @question }</dt>
+        <dt>{@tldr}/{@question}</dt>
         <dd><#slot /></dd>
       </div>
       """
     )
   end
 
-  test "shorthand surface syntax is formatted by Elixir code formatter" do
+  test "shorthand surface syntax (invisible []) is formatted by Elixir code formatter" do
     assert_formatter_outputs(
       "<div class={ foo:        bar }></div>",
-      "<div class={ foo: bar } />\n"
+      "<div class={foo: bar} />\n"
     )
   end
 
-  test "interpolation in attributes is formatted as expected" do
+  test "expressions in attributes" do
     assert_formatter_outputs(
       """
-      <div class={[1, 2, 3]} />
+      <div class={  [1, 2, 3]  } />
       """,
       """
-      <div class={ [1, 2, 3] } />
+      <div class={[1, 2, 3]} />
       """
     )
 
@@ -138,7 +138,7 @@ defmodule Surface.FormatterTest do
     )
   end
 
-  test "interpolation in attributes of deeply nested elements" do
+  test "expressions in attributes of deeply nested elements" do
     assert_formatter_outputs(
       """
       <section>
@@ -171,30 +171,30 @@ defmodule Surface.FormatterTest do
       <Component foo={"bar #\{@baz}  "}></Component>
       """,
       """
-      <Component foo={ "bar #\{@baz}  " } />
+      <Component foo={"bar #\{@baz}  "} />
       """
     )
   end
 
-  test "boolean, integer, and string literals in attributes are not wrapped in Surface brackets" do
+  test "boolean, integer, and string literals in attributes are not wrapped in expression brackets" do
     assert_formatter_outputs(
       """
       <Component true_prop={ true } false_prop={ false }
       int_prop={12345} str_prop={ "some_string_value" } />
       """,
       """
-      <Component true_prop false_prop=false int_prop={ 12345 } str_prop="some_string_value" />
+      <Component true_prop false_prop=false int_prop={12345} str_prop="some_string_value" />
       """
     )
   end
 
-  test "float literals are kept in Surface brackets (because it doesn't work not to)" do
+  test "float literals are kept in expression brackets" do
     assert_formatter_outputs(
       """
-      <Component float_prop={123.456} />
+      <Component float_prop={ 123.456 } />
       """,
       """
-      <Component float_prop={ 123.456 } />
+      <Component float_prop={123.456} />
       """
     )
   end
@@ -205,7 +205,7 @@ defmodule Surface.FormatterTest do
       <Component int_prop={1000000000} float_prop={123456789.123456789 } />
       """,
       """
-      <Component int_prop={ 1_000_000_000 } float_prop={ 123_456_789.123456789 } />
+      <Component int_prop={1_000_000_000} float_prop={123_456_789.123456789} />
       """
     )
   end
@@ -319,7 +319,7 @@ defmodule Surface.FormatterTest do
 
   test "(bugfix) a trailing interpolation does not get an extra newline added" do
     assert_formatter_doesnt_change("""
-    <p>Foo</p><p>Bar</p>{ baz }
+    <p>Foo</p><p>Bar</p>{baz}
     """)
   end
 
@@ -378,11 +378,11 @@ defmodule Surface.FormatterTest do
       """,
       """
       <pre>
-      { @data }
+      {@data}
             <Component />
       </pre>
       <code>
-        { @data }
+        {@data}
         <Component />
           </code>
 
@@ -441,7 +441,7 @@ defmodule Surface.FormatterTest do
       """
       <Parent>
         <Child
-          first={ 123 }
+          first={123}
           second={[
             {"foo", application.description},
             {"baz", application.product_owner}
@@ -468,7 +468,7 @@ defmodule Surface.FormatterTest do
       """
       <Parent>
         <Child
-          first={123}
+          first={ 123 }
           second={[
                   {"foo", foo},
                   {"bar", bar}
@@ -479,7 +479,7 @@ defmodule Surface.FormatterTest do
       """
       <Parent>
         <Child
-          first={ 123 }
+          first={123}
           second={[
             {"foo", foo},
             {"bar", bar}
@@ -494,7 +494,7 @@ defmodule Surface.FormatterTest do
       <Parent>
         <Child first={[
         {"foo", foo}, {"bar", bar}
-        ]} second={123} />
+        ]} second={ 123 } />
       </Parent>
       """,
       """
@@ -504,7 +504,7 @@ defmodule Surface.FormatterTest do
             {"foo", foo},
             {"bar", bar}
           ]}
-          second={ 123 }
+          second={123}
         />
       </Parent>
       """
@@ -580,10 +580,10 @@ defmodule Surface.FormatterTest do
   test "attributes that are a list merged with a keyword list are formatted" do
     assert_formatter_outputs(
       """
-      <span class={"container", "container--dark": @dark_mode} />
+      <span class={ "container", "container--dark": @dark_mode } />
       """,
       """
-      <span class={ "container", "container--dark": @dark_mode } />
+      <span class={"container", "container--dark": @dark_mode} />
       """
     )
   end
@@ -591,10 +591,10 @@ defmodule Surface.FormatterTest do
   test "interpolated attributes with a function call that omits parentheses are formatted" do
     assert_formatter_outputs(
       """
-      <Component items={Enum.map @items, & &1.foo}/>
+      <Component items={ Enum.map @items, & &1.foo }/>
       """,
       """
-      <Component items={ Enum.map(@items, & &1.foo) } />
+      <Component items={Enum.map(@items, & &1.foo)} />
       """
     )
   end
@@ -608,11 +608,11 @@ defmodule Surface.FormatterTest do
       """,
       """
       <Component>
-        { link("Log out",
+        {link("Log out",
           to: Routes.user_session_path(Endpoint, :delete),
           method: :delete,
           class: "container"
-        ) }
+        )}
       </Component>
       """
     )
@@ -708,7 +708,7 @@ defmodule Surface.FormatterTest do
     """)
 
     assert_formatter_doesnt_change("""
-    <strong>Surface</strong> <i>v{ surface_version() }</i> -
+    <strong>Surface</strong> <i>v{surface_version()}</i> -
     <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
     """)
 
@@ -736,28 +736,28 @@ defmodule Surface.FormatterTest do
   test "when element content and tags aren't left on the same line, the next sibling is pushed to its own line" do
     assert_formatter_outputs(
       """
-      <div> <div> Hello </div> {1 + 1} <p>Goodbye</p> </div>
+      <div> <div> Hello </div> { 1 + 1 } <p>Goodbye</p> </div>
       """,
       """
       <div>
         <div>
           Hello
         </div>
-        { 1 + 1 } <p>Goodbye</p>
+        {1 + 1} <p>Goodbye</p>
       </div>
       """
     )
 
     assert_formatter_outputs(
       """
-      <div> <p> <span>Hello</span> </p> {1 + 1} <p>Goodbye</p> </div>
+      <div> <p> <span>Hello</span> </p> { 1 + 1 } <p>Goodbye</p> </div>
       """,
       """
       <div>
         <p>
           <span>Hello</span>
         </p>
-        { 1 + 1 } <p>Goodbye</p>
+        {1 + 1} <p>Goodbye</p>
       </div>
       """
     )
@@ -785,7 +785,7 @@ defmodule Surface.FormatterTest do
 
 
 
-         <div :if={@show_div}
+         <div :if={ @show_div }
          class="container">
              <p> Text inside paragraph    </p>
           <span>Text touching parent tags</span>
@@ -805,7 +805,7 @@ defmodule Surface.FormatterTest do
         <!-- HTML public comment (hits the browser) -->
         {!-- Surface private comment (does not hit the browser) --}
 
-        <div :if={ @show_div } class="container">
+        <div :if={@show_div} class="container">
           <p>
             Text inside paragraph
           </p>
@@ -882,7 +882,7 @@ defmodule Surface.FormatterTest do
       <Component attr={"a-#{@b}": c} />
       """,
       ~S"""
-      <Component attr={ "a-#{@b}": c } />
+      <Component attr={"a-#{@b}": c} />
       """
     )
   end

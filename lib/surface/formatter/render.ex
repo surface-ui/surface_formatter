@@ -280,14 +280,7 @@ defmodule Surface.Formatter.Render do
             |> to_string()
           end
 
-        if String.contains?(formatted_expression, "\n") do
-          # Don't add extra space characters around the curly braces because
-          # the formatted elixir code has newlines in it; this helps indentation
-          # to line up.
-          "#{name}={#{formatted_expression}}"
-        else
-          "#{name}={ #{formatted_expression} }"
-        end
+        "#{name}={#{formatted_expression}}"
     end
   end
 
