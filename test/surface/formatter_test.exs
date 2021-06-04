@@ -5,6 +5,9 @@ defmodule Surface.FormatterTest do
 
   def assert_formatter_outputs(input_code, expected_formatted_result, opts \\ []) do
     assert Formatter.format_string!(input_code, opts) == expected_formatted_result
+
+    # demonstrate that the output can be parsed by the Surface parser
+    Surface.Compiler.Parser.parse!(expected_formatted_result)
   end
 
   def assert_formatter_doesnt_change(code, opts \\ []) do
@@ -41,8 +44,8 @@ defmodule Surface.FormatterTest do
   test "Surface brackets for Elixir code still include the original code snippet" do
     assert_formatter_outputs(
       """
-          <div :if = {{1 + 1      }}>
-      {{"hello "<>"dolly"}}
+          <div :if = {1 + 1      }>
+      {"hello "<>"dolly"}
       </div>
 
 
@@ -50,8 +53,8 @@ defmodule Surface.FormatterTest do
 
       """,
       """
-      <div :if={{ 1 + 1 }}>
-        {{ "hello " <> "dolly" }}
+      <div :if={ 1 + 1 }>
+        { "hello " <> "dolly" }
       </div>
       """
     )
@@ -91,14 +94,14 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <div>
-      <dt>{{ @tldr }}/{{ @question }}</dt>
-      <dd><slot /></dd>
+      <dt>{ @tldr }/{ @question }</dt>
+      <dd><#slot /></dd>
       </div>
       """,
       """
       <div>
-        <dt>{{ @tldr }}/{{ @question }}</dt>
-        <dd><slot /></dd>
+        <dt>{ @tldr }/{ @question }</dt>
+        <dd><#slot /></dd>
       </div>
       """
     )
@@ -106,31 +109,31 @@ defmodule Surface.FormatterTest do
 
   test "shorthand surface syntax is formatted by Elixir code formatter" do
     assert_formatter_outputs(
-      "<div class={{ foo:        bar }}></div>",
-      "<div class={{ foo: bar }} />\n"
+      "<div class={ foo:        bar }></div>",
+      "<div class={ foo: bar } />\n"
     )
   end
 
   test "interpolation in attributes is formatted as expected" do
     assert_formatter_outputs(
       """
-      <div class={{[1, 2, 3]}} />
+      <div class={[1, 2, 3]} />
       """,
       """
-      <div class={{ [1, 2, 3] }} />
+      <div class={ [1, 2, 3] } />
       """
     )
 
     assert_formatter_outputs(
       """
-      <div class={{foo: "foofoofoofoofoofoofoofoofoofoo", bar: "barbarbarbarbarbarbarbarbarbarbar", baz: "bazbazbazbazbazbazbazbaz"}} />
+      <div class={foo: "foofoofoofoofoofoofoofoofoofoo", bar: "barbarbarbarbarbarbarbarbarbarbar", baz: "bazbazbazbazbazbazbazbaz"} />
       """,
       """
-      <div class={{
+      <div class={
         foo: "foofoofoofoofoofoofoofoofoofoo",
         bar: "barbarbarbarbarbarbarbarbarbarbar",
         baz: "bazbazbazbazbazbazbazbaz"
-      }} />
+      } />
       """
     )
   end
@@ -140,18 +143,18 @@ defmodule Surface.FormatterTest do
       """
       <section>
       <div>
-      <p class={{["foofoofoofoofoofoofoofoofoofoo", "barbarbarbarbarbarbarbarbarbarbar", "bazbazbazbazbazbazbazbaz"]}} />
+      <p class={["foofoofoofoofoofoofoofoofoofoo", "barbarbarbarbarbarbarbarbarbarbar", "bazbazbazbazbazbazbazbaz"]} />
       </div>
       </section>
       """,
       """
       <section>
         <div>
-          <p class={{[
+          <p class={[
             "foofoofoofoofoofoofoofoofoofoo",
             "barbarbarbarbarbarbarbarbarbarbar",
             "bazbazbazbazbazbazbazbaz"
-          ]}} />
+          ]} />
         </div>
       </section>
       """
@@ -165,10 +168,10 @@ defmodule Surface.FormatterTest do
     # are left alone other than formatting interpolated expressions.
     assert_formatter_outputs(
       """
-      <Component foo="bar {{@baz}}  "></Component>
+      <Component foo={"bar #\{@baz}  "}></Component>
       """,
       """
-      <Component foo="bar {{ @baz }}  " />
+      <Component foo={ "bar #\{@baz}  " } />
       """
     )
   end
@@ -176,11 +179,11 @@ defmodule Surface.FormatterTest do
   test "boolean, integer, and string literals in attributes are not wrapped in Surface brackets" do
     assert_formatter_outputs(
       """
-      <Component true_prop={{ true }} false_prop={{ false }}
-      int_prop={{12345}} str_prop={{ "some_string_value" }} />
+      <Component true_prop={ true } false_prop={ false }
+      int_prop={12345} str_prop={ "some_string_value" } />
       """,
       """
-      <Component true_prop false_prop=false int_prop=12345 str_prop="some_string_value" />
+      <Component true_prop false_prop=false int_prop={ 12345 } str_prop="some_string_value" />
       """
     )
   end
@@ -188,10 +191,10 @@ defmodule Surface.FormatterTest do
   test "float literals are kept in Surface brackets (because it doesn't work not to)" do
     assert_formatter_outputs(
       """
-      <Component float_prop={{123.456}} />
+      <Component float_prop={123.456} />
       """,
       """
-      <Component float_prop={{ 123.456 }} />
+      <Component float_prop={ 123.456 } />
       """
     )
   end
@@ -199,10 +202,10 @@ defmodule Surface.FormatterTest do
   test "numbers are formatted with underscores per the Elixir formatter" do
     assert_formatter_outputs(
       """
-      <Component int_prop={{1000000000}} float_prop={{123456789.123456789 }} />
+      <Component int_prop={1000000000} float_prop={123456789.123456789 } />
       """,
       """
-      <Component int_prop=1_000_000_000 float_prop={{ 123_456_789.123456789 }} />
+      <Component int_prop={ 1_000_000_000 } float_prop={ 123_456_789.123456789 } />
       """
     )
   end
@@ -248,17 +251,17 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <p>
-      <Foo bio={{%{age: 23, name: "John Jacob Jingleheimerschmidt", title: "Lead rockstar 10x ninja brogrammer", reports_to: "James Jacob Jingleheimerschmidt"}}}/>
+      <Foo bio={%{age: 23, name: "John Jacob Jingleheimerschmidt", title: "Lead rockstar 10x ninja brogrammer", reports_to: "James Jacob Jingleheimerschmidt"}}/>
       </p>
       """,
       """
       <p>
-        <Foo bio={{%{
+        <Foo bio={%{
           age: 23,
           name: "John Jacob Jingleheimerschmidt",
           title: "Lead rockstar 10x ninja brogrammer",
           reports_to: "James Jacob Jingleheimerschmidt"
-        }}} />
+        }} />
       </p>
       """
     )
@@ -266,15 +269,15 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <p>
-        <Foo urls={{["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}}/>
+        <Foo urls={["https://hexdocs.pm/elixir/DateTime.html#content", "https://hexdocs.pm/elixir/Exception.html#content"]}/>
       </p>
       """,
       """
       <p>
-        <Foo urls={{[
+        <Foo urls={[
           "https://hexdocs.pm/elixir/DateTime.html#content",
           "https://hexdocs.pm/elixir/Exception.html#content"
-        ]}} />
+        ]} />
       </p>
       """
     )
@@ -282,12 +285,12 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <p>
-      <Foo bar={{baz: "BAZ", qux: "QUX", long: "LONG", longer: "LONGER", longest: "LONGEST", wrapping: "WRAPPING", next_line: "NEXT_LINE"}} />
+      <Foo bar={baz: "BAZ", qux: "QUX", long: "LONG", longer: "LONGER", longest: "LONGEST", wrapping: "WRAPPING", next_line: "NEXT_LINE"} />
       </p>
       """,
       """
       <p>
-        <Foo bar={{
+        <Foo bar={
           baz: "BAZ",
           qux: "QUX",
           long: "LONG",
@@ -295,7 +298,7 @@ defmodule Surface.FormatterTest do
           longest: "LONGEST",
           wrapping: "WRAPPING",
           next_line: "NEXT_LINE"
-        }} />
+        } />
       </p>
       """
     )
@@ -316,7 +319,7 @@ defmodule Surface.FormatterTest do
 
   test "(bugfix) a trailing interpolation does not get an extra newline added" do
     assert_formatter_doesnt_change("""
-    <p>Foo</p><p>Bar</p>{{ baz }}
+    <p>Foo</p><p>Bar</p>{ baz }
     """)
   end
 
@@ -362,28 +365,28 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <pre>
-      {{   @data   }}
+      {   @data   }
             <Component />
       </pre>
           <code>
-        {{ @data }}
+        { @data }
         <Component />
           </code>
 
 
-            <#MacroComponent> Foo {{@bar}} baz </#MacroComponent>
+            <#MacroComponent> Foo {@bar} baz </#MacroComponent>
       """,
       """
       <pre>
-      {{ @data }}
+      { @data }
             <Component />
       </pre>
       <code>
-        {{ @data }}
+        { @data }
         <Component />
           </code>
 
-      <#MacroComponent> Foo {{@bar}} baz </#MacroComponent>
+      <#MacroComponent> Foo {@bar} baz </#MacroComponent>
       """
     )
   end
@@ -427,22 +430,22 @@ defmodule Surface.FormatterTest do
       """
       <Parent>
         <Child
-          first=123
-          second={{[
+          first={123}
+          second={[
                   {"foo", application.description},
                   {"baz", application.product_owner}
-                ]}}
+                ]}
         />
       </Parent>
       """,
       """
       <Parent>
         <Child
-          first=123
-          second={{[
+          first={ 123 }
+          second={[
             {"foo", application.description},
             {"baz", application.product_owner}
-          ]}}
+          ]}
         />
       </Parent>
       """
@@ -465,22 +468,22 @@ defmodule Surface.FormatterTest do
       """
       <Parent>
         <Child
-          first=123
-          second={{[
+          first={123}
+          second={[
                   {"foo", foo},
                   {"bar", bar}
-                ]}}
+                ]}
         />
       </Parent>
       """,
       """
       <Parent>
         <Child
-          first=123
-          second={{[
+          first={ 123 }
+          second={[
             {"foo", foo},
             {"bar", bar}
-          ]}}
+          ]}
         />
       </Parent>
       """
@@ -489,19 +492,19 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <Parent>
-        <Child first={{[
+        <Child first={[
         {"foo", foo}, {"bar", bar}
-        ]}} second=123 />
+        ]} second={123} />
       </Parent>
       """,
       """
       <Parent>
         <Child
-          first={{[
+          first={[
             {"foo", foo},
             {"bar", bar}
-          ]}}
-          second=123
+          ]}
+          second={ 123 }
         />
       </Parent>
       """
@@ -527,15 +530,15 @@ defmodule Surface.FormatterTest do
   test "interpolated lists in attributes with invisible brackets are formatted" do
     assert_formatter_outputs(
       ~S"""
-      <Component foo={{ "bar", 1, @a_very_long_name_in_assigns <> @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression }} />
+      <Component foo={ "bar", 1, @a_very_long_name_in_assigns <> @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression } />
       """,
       ~S"""
-      <Component foo={{
+      <Component foo={
         "bar",
         1,
         @a_very_long_name_in_assigns <>
           @another_extremely_long_name_to_make_the_elixir_formatter_wrap_this_expression
-      }} />
+      } />
       """
     )
   end
@@ -577,10 +580,10 @@ defmodule Surface.FormatterTest do
   test "attributes that are a list merged with a keyword list are formatted" do
     assert_formatter_outputs(
       """
-      <span class={{"container", "container--dark": @dark_mode}} />
+      <span class={"container", "container--dark": @dark_mode} />
       """,
       """
-      <span class={{ "container", "container--dark": @dark_mode }} />
+      <span class={ "container", "container--dark": @dark_mode } />
       """
     )
   end
@@ -588,10 +591,10 @@ defmodule Surface.FormatterTest do
   test "interpolated attributes with a function call that omits parentheses are formatted" do
     assert_formatter_outputs(
       """
-      <Component items={{Enum.map @items, & &1.foo}}/>
+      <Component items={Enum.map @items, & &1.foo}/>
       """,
       """
-      <Component items={{ Enum.map(@items, & &1.foo) }} />
+      <Component items={ Enum.map(@items, & &1.foo) } />
       """
     )
   end
@@ -600,16 +603,16 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
       <Component>
-        {{ link "Log out", to: Routes.user_session_path(Endpoint, :delete), method: :delete, class: "container"}}
+        { link "Log out", to: Routes.user_session_path(Endpoint, :delete), method: :delete, class: "container"}
       </Component>
       """,
       """
       <Component>
-        {{ link("Log out",
+        { link("Log out",
           to: Routes.user_session_path(Endpoint, :delete),
           method: :delete,
           class: "container"
-        ) }}
+        ) }
       </Component>
       """
     )
@@ -670,10 +673,10 @@ defmodule Surface.FormatterTest do
   test "an interpolation with only a code comment is formatted" do
     assert_formatter_outputs(
       """
-      {{# Foo}}
+      { # Foo}
       """,
       """
-      {{ # Foo }}
+      { # Foo }
       """
     )
   end
@@ -705,7 +708,7 @@ defmodule Surface.FormatterTest do
     """)
 
     assert_formatter_doesnt_change("""
-    <strong>Surface</strong> <i>v{{ surface_version() }}</i> -
+    <strong>Surface</strong> <i>v{ surface_version() }</i> -
     <a href="http://github.com/msaraiva/surface">github.com/msaraiva/surface</a>.
     """)
 
@@ -733,28 +736,28 @@ defmodule Surface.FormatterTest do
   test "when element content and tags aren't left on the same line, the next sibling is pushed to its own line" do
     assert_formatter_outputs(
       """
-      <div> <div> Hello </div> {{1 + 1}} <p>Goodbye</p> </div>
+      <div> <div> Hello </div> {1 + 1} <p>Goodbye</p> </div>
       """,
       """
       <div>
         <div>
           Hello
         </div>
-        {{ 1 + 1 }} <p>Goodbye</p>
+        { 1 + 1 } <p>Goodbye</p>
       </div>
       """
     )
 
     assert_formatter_outputs(
       """
-      <div> <p> <span>Hello</span> </p> {{1 + 1}} <p>Goodbye</p> </div>
+      <div> <p> <span>Hello</span> </p> {1 + 1} <p>Goodbye</p> </div>
       """,
       """
       <div>
         <p>
           <span>Hello</span>
         </p>
-        {{ 1 + 1 }} <p>Goodbye</p>
+        { 1 + 1 } <p>Goodbye</p>
       </div>
       """
     )
@@ -776,19 +779,19 @@ defmodule Surface.FormatterTest do
   test "for docs" do
     assert_formatter_outputs(
       """
-       <RootComponent with_many_attributes={{ true }} causing_this_line_to_wrap={{ true}} because_it_is_too_long={{ "yes, this line is long enough to wrap" }}>
+       <RootComponent with_many_attributes={ true } causing_this_line_to_wrap={ true} because_it_is_too_long={ "yes, this line is long enough to wrap" }>
          <!-- An HTML comment -->
-         {{#An Elixir comment}}
+         { #An Elixir comment}
 
 
 
-         <div :if={{@show_div}}
+         <div :if={@show_div}
          class="container">
              <p> Text inside paragraph    </p>
           <span>Text touching parent tags</span>
          </div>
 
-      <Child  items={{[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}}>
+      <Child  items={[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}>
         Default slot contents
       </Child>
       </RootComponent>
@@ -800,21 +803,21 @@ defmodule Surface.FormatterTest do
         because_it_is_too_long="yes, this line is long enough to wrap"
       >
         <!-- An HTML comment -->
-        {{ # An Elixir comment }}
+        { # An Elixir comment }
 
-        <div :if={{ @show_div }} class="container">
+        <div :if={ @show_div } class="container">
           <p>
             Text inside paragraph
           </p>
           <span>Text touching parent tags</span>
         </div>
 
-        <Child items={{[
+        <Child items={[
           %{name: "Option 1", key: 1},
           %{name: "Option 2", key: 2},
           %{name: "Option 3", key: 3},
           %{name: "Option 4", key: 4}
-        ]}}>
+        ]}>
           Default slot contents
         </Child>
       </RootComponent>
@@ -876,10 +879,10 @@ defmodule Surface.FormatterTest do
   test "(bugfix) magic keyword lists with interpolated string keys are correctly identified and don't crash" do
     assert_formatter_outputs(
       ~S"""
-      <Component attr={{"a-#{@b}": c}} />
+      <Component attr={"a-#{@b}": c} />
       """,
       ~S"""
-      <Component attr={{ "a-#{@b}": c }} />
+      <Component attr={ "a-#{@b}": c } />
       """
     )
   end

@@ -16,14 +16,14 @@ defmodule Surface.Formatter.Render do
   @spec node(Formatter.formatter_node(), list(Formatter.option())) :: String.t() | nil
   def node(segment, opts)
 
-  def node({:interpolation, expression, _meta}, opts) do
+  def node({:expr, expression, _meta}, opts) do
     formatted =
       expression
       |> String.trim()
       |> Code.format_string!(opts)
 
     String.replace(
-      "{{ #{formatted} }}",
+      "{ #{formatted} }",
       "\n",
       "\n#{String.duplicate(@tab, opts[:indent])}"
     )
@@ -47,7 +47,7 @@ defmodule Surface.Formatter.Render do
     " "
   end
 
-  def node({:comment, comment}, _opts) do
+  def node({:comment, comment, _}, _opts) do
     comment
   end
 
@@ -223,9 +223,6 @@ defmodule Surface.Formatter.Render do
   defp attribute({name, false, _meta}),
     do: "#{name}=false"
 
-  defp attribute({name, value, _meta}) when is_integer(value),
-    do: "#{name}=#{Code.format_string!("#{value}")}"
-
   defp attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
@@ -243,7 +240,7 @@ defmodule Surface.Formatter.Render do
       end
 
     case quoted_wrapped_expression do
-      [literal] when is_boolean(literal) or is_binary(literal) or is_integer(literal) ->
+      [literal] when is_boolean(literal) or is_binary(literal) ->
         # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
         # that can exclude the brackets, so render it without the brackets
         attribute({name, literal, meta})
@@ -280,9 +277,9 @@ defmodule Surface.Formatter.Render do
           # Don't add extra space characters around the curly braces because
           # the formatted elixir code has newlines in it; this helps indentation
           # to line up.
-          "#{name}={{#{formatted_expression}}}"
+          "#{name}={#{formatted_expression}}"
         else
-          "#{name}={{ #{formatted_expression} }}"
+          "#{name}={ #{formatted_expression} }"
         end
     end
   end

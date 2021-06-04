@@ -312,14 +312,13 @@ defmodule Surface.Formatter do
   recommended that developers don't blindly run the formatter on an entire
   codebase and commit, but instead sanity check each file to ensure the results
   are desired.
-
   """
   @spec format_string!(String.t(), list(option)) :: String.t()
   def format_string!(string, opts \\ []) do
-    {:ok, parsed} =
+    parsed =
       string
       |> String.trim()
-      |> Surface.Compiler.Parser.parse()
+      |> Surface.Compiler.Parser.parse!()
 
     # Ensure the :indent option is set
     opts = Keyword.put_new(opts, :indent, 0)
