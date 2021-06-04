@@ -780,8 +780,8 @@ defmodule Surface.FormatterTest do
     assert_formatter_outputs(
       """
        <RootComponent with_many_attributes={ true } causing_this_line_to_wrap={ true} because_it_is_too_long={ "yes, this line is long enough to wrap" }>
-         <!-- An HTML comment -->
-         { #An Elixir comment}
+         <!-- HTML public comment (hits the browser) -->
+         {!-- Surface private comment (does not hit the browser) --}
 
 
 
@@ -802,8 +802,8 @@ defmodule Surface.FormatterTest do
         causing_this_line_to_wrap
         because_it_is_too_long="yes, this line is long enough to wrap"
       >
-        <!-- An HTML comment -->
-        { # An Elixir comment }
+        <!-- HTML public comment (hits the browser) -->
+        {!-- Surface private comment (does not hit the browser) --}
 
         <div :if={ @show_div } class="container">
           <p>
