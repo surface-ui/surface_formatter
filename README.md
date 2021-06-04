@@ -32,7 +32,7 @@ See `mix surface.format` for documentation of flags and configuration options.
 
 The formatter mostly follows these rules:
 
-- Only formats code inside of `~H"""` blocks and `.sface` files.
+- Only formats code inside of `~F"""` blocks and `.sface` files.
 - Child nodes are typically indented 2 spaces in from their parent.
 - Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the
   [official Elixir formatter](https://hexdocs.pm/elixir/Code.html#format_string!/2).
@@ -47,20 +47,20 @@ See `Surface.Formatter.format_string!/2` for further documentation.
 Out of the box, Surface code that looks like this:
 
 ```html
- <RootComponent with_many_attributes={{ true }} causing_this_line_to_wrap={{ true}} because_it_is_too_long={{ "yes" }}>
+ <RootComponent with_many_attributes={ true } causing_this_line_to_wrap={ true} because_it_is_too_long={ "yes, this line is long enough to wrap" }>
    <!-- An HTML comment -->
-   {{#An Elixir comment}}
+   { #An Elixir comment}
 
 
 
-   <div :if={{@show_div}}
+   <div :if={@show_div}
    class="container">
        <p> Text inside paragraph    </p>
     <span>Text touching parent tags</span>
    </div>
 
-<Child  items={{[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}}>
-  Contents
+<Child  items={[%{name: "Option 1", key: 1}, %{name: "Option 2", key:  2},    %{name: "Option 3", key: 3}, %{name: "Option 4", key: 4}]}>
+  Default slot contents
 </Child>
 </RootComponent>
 ```
@@ -74,22 +74,22 @@ will be formatted like this:
   because_it_is_too_long="yes, this line is long enough to wrap"
 >
   <!-- An HTML comment -->
-  {{ # An Elixir comment }}
+  { # An Elixir comment }
 
-  <div :if={{ @show_div }} class="container">
+  <div :if={ @show_div } class="container">
     <p>
       Text inside paragraph
     </p>
     <span>Text touching parent tags</span>
   </div>
 
-  <Child items={{[
+  <Child items={[
     %{name: "Option 1", key: 1},
     %{name: "Option 2", key: 2},
     %{name: "Option 3", key: 3},
     %{name: "Option 4", key: 4}
-  ]}}>
-    Contents
+  ]}>
+    Default slot contents
   </Child>
 </RootComponent>
 ```
