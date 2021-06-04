@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Surface.Format do
-  @shortdoc "Formats Surface H-sigils and .sface files in the given files/patterns"
+  @shortdoc "Formats Surface F-sigils and .sface files in the given files/patterns"
 
   @moduledoc """
-  Formats Surface `~H` sigils and `.sface` files in the given files and patterns.
+  Formats Surface `~F` sigils and `.sface` files in the given files and patterns.
 
       mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
@@ -74,9 +74,9 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp format_ex_string!(input, opts) do
-    ~r/\n( *)~H"""(.*?)"""/s
+    ~r/\n( *)~F"""(.*?)"""/s
     |> Regex.replace(input, fn _match, indentation, surface_code ->
-      # Indent the entire ~H sigil contents based on the indentation of `~H"""`
+      # Indent the entire ~F sigil contents based on the indentation of `~F"""`
       tabs =
         indentation
         |> String.length()
@@ -84,7 +84,7 @@ defmodule Mix.Tasks.Surface.Format do
 
       opts = Keyword.put(opts, :indent, tabs)
 
-      "\n#{indentation}~H\"\"\"\n#{surface_code
+      "\n#{indentation}~F\"\"\"\n#{surface_code
       |> Formatter.format_string!(opts)}#{indentation}\"\"\""
     end)
   end
