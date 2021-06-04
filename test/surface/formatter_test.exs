@@ -42,7 +42,7 @@ defmodule Surface.FormatterTest do
       )
     end
 
-    test "Contents of Macro Components are preserved" do
+    test "Contents of macro components are preserved" do
       assert_formatter_doesnt_change("""
       <#MacroComponent>
       * One
@@ -576,6 +576,66 @@ defmodule Surface.FormatterTest do
       <Test />
       """)
     end
+
+    test "whitespace padding in code comments is normalized" do
+      assert_formatter_outputs(
+        """
+        {!--  testing   --}
+        <!--     123    -->
+        """,
+        """
+        {!-- testing --}
+        <!-- 123 -->
+        """
+      )
+    end
+
+    test "multiline code comments are rendered as-is (except aligning indentation) to avoid false assumptions about how developers want to format comments" do
+      # The ending state of these comments is a bit quirky.
+      # The formatter refuses to make assumptions about the whitespace in
+      # multiline comments, so it renders them verbatim. However, it renders
+      # the beginning "tag" indented "properly" as a child of its parent.
+      # Developers can respond to this by adjusting the contents in relation
+      # to the opening "tag".
+      #
+      # This is identical to how whitespace is handled for <pre>/<code>/<#MacroComponent>
+      assert_formatter_outputs(
+        """
+        <div>
+        {!--
+
+
+          testing
+
+
+        --}
+        <!--
+        Here is a code comment.
+          It has multiple lines.
+            123
+
+        -->
+        </div>
+        """,
+        """
+        <div>
+          {!--
+
+
+          testing
+
+
+        --}
+          <!--
+        Here is a code comment.
+          It has multiple lines.
+            123
+
+        -->
+        </div>
+        """
+      )
+    end
   end
 
   describe "[expressions]" do
@@ -764,7 +824,7 @@ defmodule Surface.FormatterTest do
     end
   end
 
-  test "self closing Macro Components are preserved" do
+  test "self closing macro components are preserved" do
     assert_formatter_doesnt_change("""
     <#MacroComponent />
     """)

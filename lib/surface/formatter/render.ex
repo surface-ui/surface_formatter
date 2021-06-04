@@ -55,23 +55,31 @@ defmodule Surface.Formatter.Render do
   end
 
   def node({:comment, comment, %{visibility: :public}}, _opts) do
-    contents =
+    if String.contains?(comment, "\n") do
       comment
-      |> String.replace(~r/^<!--/, "")
-      |> String.replace(~r/-->$/, "")
-      |> String.trim()
+    else
+      contents =
+        comment
+        |> String.replace(~r/^<!--/, "")
+        |> String.replace(~r/-->$/, "")
+        |> String.trim()
 
-    "<!-- #{contents} -->"
+      "<!-- #{contents} -->"
+    end
   end
 
   def node({:comment, comment, %{visibility: :private}}, _opts) do
-    contents =
+    if String.contains?(comment, "\n") do
       comment
-      |> String.replace(~r/^{!--/, "")
-      |> String.replace(~r/--}$/, "")
-      |> String.trim()
+    else
+      contents =
+        comment
+        |> String.replace(~r/^{!--/, "")
+        |> String.replace(~r/--}$/, "")
+        |> String.trim()
 
-    "{!-- #{contents} --}"
+      "{!-- #{contents} --}"
+    end
   end
 
   def node(:indent_one_less, opts) do
