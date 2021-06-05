@@ -878,16 +878,26 @@ defmodule Surface.FormatterTest do
       assert_formatter_outputs(
         """
         {#if @value == 0}
+
           <div class="equal">
             Value {@value} is 0
           </div>
-        {#elseif @value > 0}
+
+
+
+
+        {#elseif     @value   >  0 }
           <div class="greater">
+
             Value {@value} is greater than 0
+
           </div>
         {#else}
+
+
           <div class="lower">
-            Value {@value} is lower than 0
+
+                  Value {@value} is lower than 0
           </div>
         {/if}
         """,
@@ -913,8 +923,9 @@ defmodule Surface.FormatterTest do
       assert_formatter_outputs(
         """
         {#for item <- @items}
-          Item: {item}
-        {#else}
+
+          Item:   {item}
+        {#else  }
           No items
         {/for}
         """,
@@ -931,17 +942,25 @@ defmodule Surface.FormatterTest do
     test "case block expressions" do
       assert_formatter_outputs(
         """
-        {#case @value}
+        {#case  @value }
+
           {#match [first|_]}
             <div {=@class}>
               First {first}
             </div>
+
           {#match []}
-            <div {=@class}>
+
+
+            <div class={@class}>
               Value is empty
             </div>
+
           {#match _}
+
             Value is something else
+
+
         {/case}
         """,
         """
