@@ -119,19 +119,8 @@ defmodule Surface.Formatter.Phases.Render do
     end
 
     opening = "{##{name}#{if expr, do: " "}#{expr}}"
-
-    child_indentation =
-      if main_block_element do
-        0
-      else
-        if name == "match" do
-          2
-        else
-          1
-        end
-      end
-
-    next_opts = Keyword.update(opts, :indent, 0, &(&1 + child_indentation))
+    indent_children = name not in ["if", "for"]
+    next_opts = Keyword.update(opts, :indent, 0, &(&1 + (if indent_children do 1 else 0 end)))
     rendered_children = Enum.map(body, &render_node(&1, next_opts))
 
     "#{opening}#{rendered_children}#{if main_block_element do "{/#{name}}" end}"

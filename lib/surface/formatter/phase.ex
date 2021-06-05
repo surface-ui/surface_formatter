@@ -27,20 +27,28 @@ defmodule Surface.Formatter.Phase do
   @typedoc "A list of nodes"
   @type nodes :: [Formatter.formatter_node()]
 
+  @typep block :: {:block, block_name :: String.t, expr :: [term], body :: [Formatter.formatter_node()], meta :: term}
+
+  @type transform_element_children_opt :: {:transform_block, (block -> block)}
+
   @doc """
   Given a list of nodes, find all "element" nodes (HTML elements or Surface components)
   and transform children of those nodes using the given function.
 
   Useful for recursing deeply through the entire tree of nodes.
   """
-  @spec transform_element_children(nodes, node_transformer) :: nodes
-  def transform_element_children(nodes, transform) do
+  @spec transform_element_children(nodes, node_transformer, keyword) :: nodes
+  def transform_element_children(nodes, transform, opts \\ []) do
     Enum.map(nodes, fn
       {tag, attributes, children, meta} ->
         {tag, attributes, transform.(children), meta}
 
-      {:block, name, expr, children, meta} ->
-        {:block, name, expr, transform.(children), meta}
+      {:block, name, expr, children, meta} = block ->
+        if block_transformer = Keyword.get(opts, :transform_block) do
+          block_transformer.(block)
+        else
+          {:block, name, expr, transform.(children), meta}
+        end
 
       node ->
         node
