@@ -111,11 +111,14 @@ defmodule Surface.Formatter.Phases.Render do
     main_block_element = name in ["if", "for", "case"]
 
     expr = case expr do
-      [{:root, {:attribute_expr, expr, _meta}, __meta}] -> expr
-      [] -> nil
+      [{:root, {:attribute_expr, expr, _meta}, __meta}] ->
+        Code.format_string!(expr)
+
+      [] ->
+        nil
     end
 
-    opening = "{##{name}#{if expr do " " <> expr end}}"
+    opening = "{##{name}#{if expr, do: " "}#{expr}}"
 
     child_indentation =
       if main_block_element do

@@ -946,7 +946,7 @@ defmodule Surface.FormatterTest do
         """,
         """
         {#case @value}
-          {#match [first|_]}
+          {#match [first | _]}
             <div {=@class}>
               First {first}
             </div>
