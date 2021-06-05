@@ -1,7 +1,7 @@
 defmodule Surface.Formatter do
   @moduledoc "Functions for formatting Surface code snippets."
 
-  alias Surface.Formatter.{Phases, Render}
+  alias Surface.Formatter.Phases
 
   @typedoc """
   Options that can be passed to `Surface.Formatter.format_string!/2`.
@@ -328,14 +328,12 @@ defmodule Surface.Formatter do
       Phases.Newlines,
       Phases.SpacesToNewlines,
       Phases.Indent,
-      Phases.FinalNewline
+      Phases.FinalNewline,
+      Phases.Render
     ]
     |> Enum.reduce(parsed, fn phase, nodes ->
-      phase.run(nodes)
+      phase.run(nodes, opts)
     end)
-    |> Enum.map(&Render.node(&1, opts))
-    |> List.flatten()
-    |> Enum.join()
   end
 
   @doc """

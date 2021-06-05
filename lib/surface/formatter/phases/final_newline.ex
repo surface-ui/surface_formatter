@@ -3,7 +3,7 @@ defmodule Surface.Formatter.Phases.FinalNewline do
 
   @behaviour Surface.Formatter.Phase
 
-  def run(nodes) do
+  def run(nodes, _opts) do
     nodes ++ [:newline]
   end
 end
