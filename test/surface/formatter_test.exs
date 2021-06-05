@@ -979,6 +979,94 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+
+    test "nested blocks" do
+      assert_formatter_outputs(
+        """
+        {#if @value == 0}
+          {#if @yell}
+            <div class="equal">
+              VALUE {@value} IS 0
+            </div>
+          {#else}
+            {#if @whisper}
+              <div class="equal">
+                {@value}...0
+              </div>
+            {#else}
+              <div class="equal">
+                Value {@value} is 0
+              </div>
+            {/if}
+          {/if}
+        {#else}
+          <div class="lower">
+              Value {@value} is lower than 0
+          </div>
+        {/if}
+        """,
+        """
+        {#if @value == 0}
+          {#if @yell}
+            <div class="equal">
+              VALUE {@value} IS 0
+            </div>
+          {#else}
+            {#if @whisper}
+              <div class="equal">
+                {@value}...0
+              </div>
+            {#else}
+              <div class="equal">
+                Value {@value} is 0
+              </div>
+            {/if}
+          {/if}
+        {#else}
+          <div class="lower">
+            Value {@value} is lower than 0
+          </div>
+        {/if}
+        """
+      )
+
+      assert_formatter_outputs(
+        """
+        {#case @foo}
+          {#match 1}
+            {#case @bar}
+              {#match 2}
+                <div>
+                  foo is 1 and bar is 2
+                </div>
+              {#match _}
+                <div>
+                  bar is not 2
+                </div>
+            {/case}
+          {#match _}
+            foo is not 1
+        {/case}
+        """,
+        """
+        {#case @foo}
+          {#match 1}
+            {#case @bar}
+              {#match 2}
+                <div>
+                  foo is 1 and bar is 2
+                </div>
+              {#match _}
+                <div>
+                  bar is not 2
+                </div>
+            {/case}
+          {#match _}
+            foo is not 1
+        {/case}
+        """
+      )
+    end
   end
 
   test "self closing macro components are preserved" do

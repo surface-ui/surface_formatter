@@ -7,7 +7,6 @@ defmodule Surface.Formatter.Phases.TagWhitespace do
   """
 
   @behaviour Surface.Formatter.Phase
-
   alias Surface.Formatter
 
   def run(nodes, _opts) do

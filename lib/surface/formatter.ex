@@ -329,6 +329,7 @@ defmodule Surface.Formatter do
       Phases.SpacesToNewlines,
       Phases.Indent,
       Phases.FinalNewline,
+      Phases.BlockExceptions,
       Phases.Render
     ]
     |> Enum.reduce(parsed, fn phase, nodes ->
