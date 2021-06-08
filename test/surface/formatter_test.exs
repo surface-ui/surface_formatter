@@ -874,6 +874,31 @@ defmodule Surface.FormatterTest do
       )
     end
 
+    test "if../if block expressions" do
+      assert_formatter_outputs(
+        """
+        <div> <div>
+        {#if @greet}
+        <p>
+        Hello
+        </p>
+        {/if}
+        </div> </div>
+        """,
+        """
+        <div>
+          <div>
+            {#if @greet}
+              <p>
+                Hello
+              </p>
+            {/if}
+          </div>
+        </div>
+        """
+      )
+    end
+
     test "if..elseif..else../if block expressions" do
       assert_formatter_outputs(
         """

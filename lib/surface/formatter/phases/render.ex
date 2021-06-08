@@ -102,12 +102,13 @@ defmodule Surface.Formatter.Phases.Render do
     html
   end
 
+  # default block does not get rendered `{#default}`; just children are rendered
   def render_node({:block, :default, [], children, _meta}, opts) do
     next_opts = Keyword.update(opts, :indent, 0, &(&1 + 1))
     Enum.map(children, &render_node(&1, next_opts))
   end
 
-  def render_node({:block, name, expr, body, _meta}, opts) do
+  def render_node({:block, name, expr, children, _meta}, opts) do
     main_block_element = name in ["if", "for", "case"]
 
     expr = case expr do
@@ -119,9 +120,14 @@ defmodule Surface.Formatter.Phases.Render do
     end
 
     opening = "{##{name}#{if expr, do: " "}#{expr}}"
-    indent_children = name not in ["if", "for"]
-    next_opts = Keyword.update(opts, :indent, 0, &(&1 + (if indent_children do 1 else 0 end)))
-    rendered_children = Enum.map(body, &render_node(&1, next_opts))
+    next_indent =
+      case children do
+        [{:block, _, _, _, _} | _] -> 0
+        _ -> 1
+      end
+
+    next_opts = Keyword.update(opts, :indent, 0, &(&1 + next_indent))
+    rendered_children = Enum.map(children, &render_node(&1, next_opts))
 
     "#{opening}#{rendered_children}#{if main_block_element do "{/#{name}}" end}"
   end
