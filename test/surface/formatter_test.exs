@@ -1092,6 +1092,34 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+
+    test "line breaks in blocks" do
+      assert_formatter_outputs(
+        """
+        <div>
+          <div>
+            <p>
+              {#if not is_nil(@some_assign.foo) or not is_nil(@some_assign.bar) or not is_nil(@some_assign.bazzzzzzz.qux)}
+                Hello
+              {/if}
+            </p>
+          </div>
+        </div>
+        """,
+        """
+        <div>
+          <div>
+            <p>
+              {#if not is_nil(@some_assign.foo) or not is_nil(@some_assign.bar) or
+                  not is_nil(@some_assign.bazzzzzzz.qux)}
+                Hello
+              {/if}
+            </p>
+          </div>
+        </div>
+        """
+      )
+    end
   end
 
   test "self closing macro components are preserved" do

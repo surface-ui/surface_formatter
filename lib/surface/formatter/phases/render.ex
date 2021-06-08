@@ -119,7 +119,10 @@ defmodule Surface.Formatter.Phases.Render do
         nil
     end
 
-    opening = "{##{name}#{if expr, do: " "}#{expr}}"
+    opening =
+      "{##{name}#{if expr, do: " "}#{expr}}"
+      |> String.replace("\n", "\n" <> String.duplicate(@tab, opts[:indent] + 1))
+
     next_indent =
       case children do
         [{:block, _, _, _, _} | _] -> 0
