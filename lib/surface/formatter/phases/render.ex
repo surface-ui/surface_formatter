@@ -348,17 +348,21 @@ defmodule Surface.Formatter.Phases.Render do
             |> to_string()
           end
 
-        if name == :root do
-          case formatted_expression do
-            "... " <> expression -> "{...#{expression}}"
-            expression -> "{#{expression}}"
-          end
-        else
-          if formatted_expression == "@#{name}" do
+        case {name, formatted_expression, formatted_expression == "@#{name}"} do
+          {:root, "... " <> expression, _} ->
+            "{...#{expression}}"
+
+          {:root, _, _} ->
+            "{#{formatted_expression}}"
+
+          {":attrs", _, _} ->
+            "{...#{formatted_expression}}"
+
+          {_, _, true} ->
             "{=@#{name}}"
-          else
+
+          _ ->
             "#{name}={#{formatted_expression}}"
-          end
         end
     end
   end

@@ -841,6 +841,15 @@ defmodule Surface.FormatterTest do
         <div {...@attrs} />
         """
       )
+
+      assert_formatter_outputs(
+        """
+        <div :attrs={@foo} />
+        """,
+        """
+        <div {...@foo} />
+        """
+      )
     end
 
     test "shorthand assigns passthrough attributes are formatted" do
