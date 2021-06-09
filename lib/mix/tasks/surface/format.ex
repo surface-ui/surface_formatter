@@ -74,18 +74,37 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp format_ex_string!(input, opts) do
-    ~r/\n( *)~F"""(.*?)"""/s
-    |> Regex.replace(input, fn _match, indentation, surface_code ->
-      # Indent the entire ~F sigil contents based on the indentation of `~F"""`
-      tabs =
-        indentation
-        |> String.length()
-        |> Kernel.div(2)
+    string =
+      ~r/\n( *)~F"""(.*?)"""/s
+      |> Regex.replace(input, fn _match, indentation, surface_code ->
+        # Indent the entire ~F sigil contents based on the indentation of `~F"""`
+        tabs =
+          indentation
+          |> String.length()
+          |> Kernel.div(2)
 
-      opts = Keyword.put(opts, :indent, tabs)
+        opts = Keyword.put(opts, :indent, tabs)
 
-      "\n#{indentation}~F\"\"\"\n#{surface_code
-      |> Formatter.format_string!(opts)}#{indentation}\"\"\""
+        "\n#{indentation}~F\"\"\"\n#{Formatter.format_string!(surface_code, opts)}#{indentation}\"\"\""
+      end)
+
+    string =
+      Regex.replace(~r/~F\"([^\"].*?)\"/s, string, fn _match, code ->
+        "~F\"#{Formatter.format_string!(code, opts)}\""
+      end)
+
+    string =
+      Regex.replace(~r/~F\[(.*?)\]/s, string, fn _match, code ->
+        "~F[#{Formatter.format_string!(code, opts)}]"
+      end)
+
+    string =
+      Regex.replace(~r/~F\((.*?)\)/s, string, fn _match, code ->
+        "~F(#{Formatter.format_string!(code, opts)})"
+      end)
+
+    Regex.replace(~r/~F\{(.*?)\}/s, string, fn _match, code ->
+      "~F{#{Formatter.format_string!(code, opts)}}"
     end)
   end
 
