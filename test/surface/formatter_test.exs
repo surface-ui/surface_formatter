@@ -1291,4 +1291,27 @@ defmodule Surface.FormatterTest do
       """
     )
   end
+
+  test "<template slot=\"...\"> is formatted in shorthand syntax" do
+    assert_formatter_outputs(
+      """
+      <div>
+        <#template slot="header" :let={value: value}> Foo </#template>
+
+        <#template> Foo </#template>
+      </div>
+      """,
+      """
+      <div>
+        <:header :let={value: value}>
+          Foo
+        </:header>
+
+        <#template>
+          Foo
+        </#template>
+      </div>
+      """
+    )
+  end
 end
