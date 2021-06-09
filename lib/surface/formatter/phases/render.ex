@@ -111,13 +111,14 @@ defmodule Surface.Formatter.Phases.Render do
   def render_node({:block, name, expr, children, _meta}, opts) do
     main_block_element = name in ["if", "for", "case"]
 
-    expr = case expr do
-      [{:root, {:attribute_expr, expr, _meta}, __meta}] ->
-        Code.format_string!(expr)
+    expr =
+      case expr do
+        [{:root, {:attribute_expr, expr, _meta}, __meta}] ->
+          Code.format_string!(expr)
 
-      [] ->
-        nil
-    end
+        [] ->
+          nil
+      end
 
     opening =
       "{##{name}#{if expr, do: " "}#{expr}}"
@@ -132,7 +133,9 @@ defmodule Surface.Formatter.Phases.Render do
     next_opts = Keyword.update(opts, :indent, 0, &(&1 + next_indent))
     rendered_children = Enum.map(children, &render_node(&1, next_opts))
 
-    "#{opening}#{rendered_children}#{if main_block_element do "{/#{name}}" end}"
+    "#{opening}#{rendered_children}#{if main_block_element do
+      "{/#{name}}"
+    end}"
   end
 
   def render_node({tag, attributes, children, _meta}, opts) do

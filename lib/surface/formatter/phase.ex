@@ -20,7 +20,9 @@ defmodule Surface.Formatter.Phase do
   alias Surface.Formatter
 
   @doc "The function implementing the phase. Returns the given nodes with the transformation applied."
-  @callback run(nodes :: [Formatter.formatter_node()], opts :: [Formatter.option()]) :: [Formatter.formatter_node()]
+  @callback run(nodes :: [Formatter.formatter_node()], opts :: [Formatter.option()]) :: [
+              Formatter.formatter_node()
+            ]
 
   @typedoc "A node that takes a list of nodes and returns them back after applying a transformation"
   @type node_transformer :: (nodes -> nodes)
