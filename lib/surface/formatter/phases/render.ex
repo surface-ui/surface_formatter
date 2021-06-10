@@ -117,6 +117,7 @@ defmodule Surface.Formatter.Phases.Render do
           attr
           |> render_attribute()
           |> String.slice(1..-2)
+          |> String.trim()
 
         [] ->
           nil

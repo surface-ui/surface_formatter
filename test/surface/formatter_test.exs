@@ -983,7 +983,9 @@ defmodule Surface.FormatterTest do
     test "for..else../for block expressions with multi-line generator" do
       assert_formatter_outputs(
         """
-        {#for item <- @items, item.state = :valid}
+        {#for item <- @some_prop.items,
+        item.type == Some.Long.Complicated.Atom,
+        value = item.some_item_property}
 
           Item:   {item}
         {#else  }
@@ -991,7 +993,9 @@ defmodule Surface.FormatterTest do
         {/for}
         """,
         """
-        {#for item <- @items, item.state = :valid}
+        {#for item <- @some_prop.items,
+            item.type == Some.Long.Complicated.Atom,
+            value = item.some_item_property}
           Item: {item}
         {#else}
           No items
