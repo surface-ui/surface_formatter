@@ -889,7 +889,9 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+  end
 
+  describe "[blocks]" do
     test "if../if block expressions" do
       assert_formatter_outputs(
         """
@@ -1156,6 +1158,36 @@ defmodule Surface.FormatterTest do
               {/if}
             </p>
           </div>
+        </div>
+        """
+      )
+    end
+
+    test "slots" do
+      assert_formatter_outputs(
+        """
+        <div class="mx-6 my-4">
+          <#slot name="header">
+            <h1 :if={@title} class="lg:hidden text-md text-neutral-600 mt-4 mb-2 font-semibold leading-loose tracking-wide">
+              {@title}
+            </h1>
+          </#slot>
+
+          <#slot />
+        </div>
+        """,
+        """
+        <div class="mx-6 my-4">
+          <#slot name="header">
+            <h1
+              :if={@title}
+              class="lg:hidden text-md text-neutral-600 mt-4 mb-2 font-semibold leading-loose tracking-wide"
+            >
+              {@title}
+            </h1>
+          </#slot>
+
+          <#slot />
         </div>
         """
       )

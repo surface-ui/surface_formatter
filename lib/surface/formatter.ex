@@ -351,6 +351,7 @@ defmodule Surface.Formatter do
   """
   @spec render_contents_verbatim?(tag) :: boolean
   def render_contents_verbatim?("#template"), do: false
+  def render_contents_verbatim?("#slot"), do: false
   def render_contents_verbatim?("#" <> _), do: true
   def render_contents_verbatim?("pre"), do: true
   def render_contents_verbatim?("code"), do: true
