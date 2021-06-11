@@ -83,6 +83,13 @@ defmodule Surface.FormatterTest do
       )
     end
 
+    test "generator attributes are formatted successfully" do
+      assert_formatter_doesnt_change("""
+      <div :for={item <- @items, item.state == :valid}>
+      </div>
+      """)
+    end
+
     test "attributes wrap at 98 characters by default" do
       assert_formatter_doesnt_change("""
       <Component foo="..........." bar="..............." baz="............" qux="..................." />
@@ -965,6 +972,30 @@ defmodule Surface.FormatterTest do
         """,
         """
         {#for item <- @items}
+          Item: {item}
+        {#else}
+          No items
+        {/for}
+        """
+      )
+    end
+
+    test "for..else../for block expressions with multi-line generator" do
+      assert_formatter_outputs(
+        """
+        {#for item <- @some_prop.items,
+        item.type == Some.Long.Complicated.Atom,
+        value = item.some_item_property}
+
+          Item:   {item}
+        {#else  }
+          No items
+        {/for}
+        """,
+        """
+        {#for item <- @some_prop.items,
+            item.type == Some.Long.Complicated.Atom,
+            value = item.some_item_property}
           Item: {item}
         {#else}
           No items

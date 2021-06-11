@@ -113,8 +113,11 @@ defmodule Surface.Formatter.Phases.Render do
 
     expr =
       case expr do
-        [{:root, {:attribute_expr, expr, _meta}, __meta}] ->
-          Code.format_string!(expr)
+        [attr] ->
+          attr
+          |> render_attribute()
+          |> String.slice(1..-2)
+          |> String.trim()
 
         [] ->
           nil
