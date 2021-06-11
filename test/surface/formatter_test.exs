@@ -857,6 +857,15 @@ defmodule Surface.FormatterTest do
         <div {...@foo} />
         """
       )
+
+      assert_formatter_outputs(
+        """
+        <Component :props={@foo} />
+        """,
+        """
+        <Component {...@foo} />
+        """
+      )
     end
 
     test "shorthand assigns passthrough attributes are formatted" do
@@ -1355,7 +1364,7 @@ defmodule Surface.FormatterTest do
     )
   end
 
-  test "<template slot=\"...\"> is formatted in shorthand syntax" do
+  test "<#template slot=\"...\"> is formatted in shorthand syntax" do
     assert_formatter_outputs(
       """
       <div>

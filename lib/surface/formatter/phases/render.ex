@@ -365,6 +365,9 @@ defmodule Surface.Formatter.Phases.Render do
           {":attrs", _, _} ->
             "{...#{formatted_expression}}"
 
+          {":props", _, _} ->
+            "{...#{formatted_expression}}"
+
           {_, _, true} ->
             "{=@#{name}}"
 
