@@ -318,7 +318,7 @@ defmodule Surface.Formatter do
     parsed =
       string
       |> String.trim()
-      |> Surface.Compiler.Parser.parse!()
+      |> Surface.Compiler.Parser.parse!(translator: Surface.Formatter.NodeTranslator)
 
     # Ensure the :indent option is set
     opts = Keyword.put_new(opts, :indent, 0)
