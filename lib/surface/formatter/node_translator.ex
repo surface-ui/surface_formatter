@@ -147,6 +147,9 @@ defmodule Surface.Formatter.NodeTranslator do
 
   defp drop_common_keys(meta) do
     Map.drop(meta, [
+      :column,
+      :file,
+      :line,
       :self_close,
       :line_end,
       :column_end,
