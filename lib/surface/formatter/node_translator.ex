@@ -1,9 +1,6 @@
 defmodule Surface.Formatter.NodeTranslator do
   @behaviour Surface.Compiler.NodeTranslator
 
-  alias Surface.IOHelper
-  alias Surface.Compiler.Helpers
-
   def handle_init(state), do: state
 
   def handle_expression(expression, meta, state) do
@@ -19,27 +16,10 @@ defmodule Surface.Formatter.NodeTranslator do
   end
 
   def handle_node("template", attributes, body, meta, state, context) do
-    message = """
-    using <template> to fill slots has been deprecated and will be removed in \
-    future versions.
-
-    Hint: replace `<template>` with `<#template>`
-    """
-
-    IOHelper.warn(message, state.caller, fn _ -> meta.line end)
-
     handle_node("#template", attributes, body, meta, state, context)
   end
 
   def handle_node("slot", attributes, body, meta, state, context) do
-    message = """
-    using <slot> to define component slots has been deprecated and will be removed in \
-    future versions.
-
-    Hint: replace `<slot>` with `<#slot>`
-    """
-
-    IOHelper.warn(message, state.caller, fn _ -> meta.line end)
     handle_node("#slot", attributes, body, meta, state, context)
   end
 
@@ -51,12 +31,7 @@ defmodule Surface.Formatter.NodeTranslator do
     {{:block, name, expr, body, to_meta(meta)}, state}
   end
 
-  def handle_subblock(:default, expr, children, meta, state, %{parent_block: "case"}) do
-    if !Helpers.blank?(children) do
-      message = "cannot have content between {#case ...} and {#match ...}"
-      IOHelper.compile_error(message, meta.file, meta.line)
-    end
-
+  def handle_subblock(:default, expr, _children, meta, state, %{parent_block: "case"}) do
     {{:block, :default, expr, [], to_meta(meta)}, state}
   end
 
@@ -105,25 +80,6 @@ defmodule Surface.Formatter.NodeTranslator do
   end
 
   def handle_attribute(
-        name,
-        {:tagged_expr, "...", expr, marker_meta},
-        _attr_meta,
-        _state,
-        _context
-      ) do
-    {:expr, value, _expr_meta} = expr
-
-    message = """
-    cannot assign `{...#{value}}` to attribute `#{name}`. \
-    The tagged expression `{... }` can only be used on a root attribute/property.
-
-    Example: <div {...@attrs}>
-    """
-
-    IOHelper.compile_error(message, marker_meta.file, marker_meta.line)
-  end
-
-  def handle_attribute(
         :root,
         {:tagged_expr, "=", expr, _marker_meta},
         attr_meta,
@@ -133,7 +89,7 @@ defmodule Surface.Formatter.NodeTranslator do
     {:expr, value, expr_meta} = expr
     %{tag_name: tag_name} = context
 
-    original_name = strip_name_from_tagged_expr_equals!(value, expr_meta)
+    original_name = strip_name_from_tagged_expr_equals!(value)
 
     name =
       case tag_name do
@@ -147,25 +103,6 @@ defmodule Surface.Formatter.NodeTranslator do
     expr_meta = Map.put(expr_meta, :tagged_expr?, true)
 
     {name, {:attribute_expr, value, to_meta(expr_meta)}, to_meta(attr_meta)}
-  end
-
-  def handle_attribute(
-        name,
-        {:tagged_expr, "=", expr, marker_meta},
-        _attr_meta,
-        _state,
-        _context
-      ) do
-    {:expr, value, _expr_meta} = expr
-
-    message = """
-    cannot assign `{=#{value}}` to attribute `#{name}`. \
-    The tagged expression `{= }` can only be used on a root attribute/property.
-
-    Example: <div {=@class}>
-    """
-
-    IOHelper.compile_error(message, marker_meta.file, marker_meta.line)
   end
 
   def handle_attribute(
@@ -220,23 +157,13 @@ defmodule Surface.Formatter.NodeTranslator do
     ])
   end
 
-  defp strip_name_from_tagged_expr_equals!(value, expr_meta) do
+  defp strip_name_from_tagged_expr_equals!(value) do
     case Code.string_to_quoted(value) do
       {:ok, {:@, _, [{name, _, _}]}} when is_atom(name) ->
         to_string(name)
 
       {:ok, {name, _, _}} when is_atom(name) ->
         to_string(name)
-
-      _ ->
-        message = """
-        invalid value for tagged expression `{=#{value}}`. \
-        The expression must be either an assign or a variable.
-
-        Examples: `<div {=@class}>` or `<div {=class}>`
-        """
-
-        IOHelper.compile_error(message, expr_meta.file, expr_meta.line)
     end
   end
 end
