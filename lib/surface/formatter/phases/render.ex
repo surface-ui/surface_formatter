@@ -305,7 +305,7 @@ defmodule Surface.Formatter.Phases.Render do
   defp render_attribute({name, value, _meta}) when is_integer(value),
     do: "#{name}={#{Code.format_string!("#{value}")}}"
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta})
+  defp render_attribute({name, {:attribute_expr, expression, expr_meta}, meta})
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
@@ -355,7 +355,7 @@ defmodule Surface.Formatter.Phases.Render do
             |> to_string()
           end
 
-        case {name, formatted_expression, formatted_expression == "@#{name}"} do
+        case {name, formatted_expression, expr_meta} do
           {:root, "... " <> expression, _} ->
             "{...#{expression}}"
 
@@ -368,7 +368,7 @@ defmodule Surface.Formatter.Phases.Render do
           {":props", _, _} ->
             "{...#{formatted_expression}}"
 
-          {_, _, true} ->
+          {_, _, %{tagged_expr?: true}} ->
             "{=@#{name}}"
 
           _ ->

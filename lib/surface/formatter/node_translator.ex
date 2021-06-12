@@ -144,6 +144,8 @@ defmodule Surface.Formatter.NodeTranslator do
           String.replace(original_name, "_", "-")
       end
 
+    expr_meta = Map.put(expr_meta, :tagged_expr?, true)
+
     {name, {:attribute_expr, value, to_meta(expr_meta)}, to_meta(attr_meta)}
   end
 

@@ -878,12 +878,14 @@ defmodule Surface.FormatterTest do
         """
       )
 
+      # demonstrate that the formatter is unopinionated about short or longhand
+      # in this scenario
       assert_formatter_outputs(
         """
         <Foo bar={@bar} />
         """,
         """
-        <Foo {=@bar} />
+        <Foo bar={@bar} />
         """
       )
     end
@@ -1046,7 +1048,7 @@ defmodule Surface.FormatterTest do
               First {first}
             </div>
           {#match []}
-            <div {=@class}>
+            <div class={@class}>
               Value is empty
             </div>
           {#match _}
