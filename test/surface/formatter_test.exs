@@ -866,6 +866,31 @@ defmodule Surface.FormatterTest do
         <Component {...@foo} />
         """
       )
+
+      # keyword with implicit brackets
+      assert_formatter_outputs(
+        """
+        <Component {... foo: @bar, baz: @qux } />
+        """,
+        """
+        <Component {...foo: @bar, baz: @qux} />
+        """
+      )
+
+      # keyword with explicit brackets
+      assert_formatter_outputs(
+        """
+        <Component {...[foo: @bar, baz: @qux]} />
+        """,
+        """
+        <Component {...[foo: @bar, baz: @qux]} />
+        """
+      )
+
+      # demonstrate that <#slot :args={@foo} /> isn't collapsed
+      assert_formatter_doesnt_change("""
+      <#slot :args={@foo} />
+      """)
     end
 
     test "shorthand assigns passthrough attributes are formatted" do
