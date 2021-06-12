@@ -1,6 +1,6 @@
 defmodule Surface.Formatter.Phases.BlockExceptions do
   @moduledoc """
-  ASDF
+  Handle exceptional case for blocks.
   """
 
   @behaviour Surface.Formatter.Phase
