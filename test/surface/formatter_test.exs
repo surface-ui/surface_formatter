@@ -797,17 +797,6 @@ defmodule Surface.FormatterTest do
       )
     end
 
-    test "non-string literals in attributes are wrapped in expression brackets" do
-      assert_formatter_outputs(
-        """
-        <Component true_prop=true false_prop=false int_prop=12345 />
-        """,
-        """
-        <Component true_prop false_prop={false} int_prop={12345} />
-        """
-      )
-    end
-
     test "string literals in attributes are not wrapped in expression brackets" do
       assert_formatter_outputs(
         """
