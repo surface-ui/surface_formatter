@@ -89,7 +89,7 @@ defmodule Mix.Tasks.Surface.Format do
       end)
 
     string =
-      Regex.replace(~r/~F\"([^\"].*?)\"/s, string, fn _match, code ->
+      Regex.replace(~r/~F\"([^\"\\].*?)\"/s, string, fn _match, code ->
         "~F\"#{Formatter.format_string!(code, opts)}\""
       end)
 
