@@ -925,6 +925,53 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+
+    test "pin operator in expressions" do
+      assert_formatter_outputs(
+        """
+        <div>
+          {^ foo}
+        </div>
+        """,
+        """
+        <div>
+          {^foo}
+        </div>
+        """
+      )
+
+      assert_formatter_outputs(
+        """
+        <div class="card dark">
+          <div class="card-content">
+            {^content_ast}
+          </div>
+          <footer class="card-footer">
+            {^code_ast}
+          </footer>
+        </div>
+        """,
+        """
+        <div class="card dark">
+          <div class="card-content">
+            {^content_ast}
+          </div>
+          <footer class="card-footer">
+            {^code_ast}
+          </footer>
+        </div>
+        """
+      )
+
+      assert_formatter_outputs(
+        """
+        <pre id={^container_id} class={^class} phx-update="ignore"><code id={^id} class={^class} phx-hook="Highlight">{^code_content}</code></pre>
+        """,
+        """
+        <pre id={^container_id} class={^class} phx-update="ignore"><code id={^id} class={^class} phx-hook="Highlight">{^code_content}</code></pre>
+        """
+      )
+    end
   end
 
   describe "[blocks]" do

@@ -8,7 +8,7 @@ defmodule Surface.Formatter.NodeTranslator do
   end
 
   def handle_tagged_expression("^", expression, meta, state) do
-    {{:ast, expression, to_meta(meta)}, state}
+    {{:expr, "^" <> expression, to_meta(meta)}, state}
   end
 
   def handle_comment(comment, meta, state) do
@@ -112,7 +112,7 @@ defmodule Surface.Formatter.NodeTranslator do
         _state,
         _context
       ) do
-    {name, {:ast, value, to_meta(expr_meta)}, to_meta(attr_meta)}
+    {name, {:attribute_expr, "^" <> value, to_meta(expr_meta)}, to_meta(attr_meta)}
   end
 
   def handle_attribute(name, {:expr, expr, expr_meta}, attr_meta, _state, _context) do
