@@ -88,6 +88,10 @@ defmodule Mix.Tasks.Surface.Format do
         "\n#{indentation}~F\"\"\"\n#{Formatter.format_string!(surface_code, opts)}#{indentation}\"\"\""
       end)
 
+    # We do not match on ~F"..." sigils where the first character is `\`
+    # in order to allow for a use case in surface_site, where Surface
+    # code examples are being rendered inside a Markdown component and
+    # contains the string: `~F"\""`
     string =
       Regex.replace(~r/~F\"([^\"\\].*?)\"/s, string, fn _match, code ->
         "~F\"#{Formatter.format_string!(code, opts)}\""
