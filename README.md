@@ -34,7 +34,7 @@ The formatter mostly follows these rules:
 
 - Only formats code inside of `~F"""` blocks and `.sface` files.
 - Child nodes are typically indented 2 spaces in from their parent.
-- Interpolated Elixir code (inside `{{ }}` brackets) is formatted by the
+- Interpolated Elixir code (inside `{ }` brackets) is formatted by the
   [official Elixir formatter](https://hexdocs.pm/elixir/Code.html#format_string!/2).
 - HTML attributes are put on separate lines if the line is too long.
 - Retains "lack of whitespace" such as `<p>No whitespace between text and tags</p>`.
