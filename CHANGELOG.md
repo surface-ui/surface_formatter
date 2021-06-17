@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0 (2021-06-17)
+
+  * Support new Surface syntax (#21 and #22)
+
 ## v0.4.1 (2021-05-13)
 
   * Fix crash related to HTML comments `<!-- -->` (#17)

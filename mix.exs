@@ -2,7 +2,7 @@ defmodule SurfaceFormatter.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/surface-ui/surface_formatter"
-  @version "0.4.1"
+  @version "0.5.0"
 
   def project do
     [
@@ -34,7 +34,7 @@ defmodule SurfaceFormatter.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:surface, "~> 0.4.1", github: "surface-ui/surface", ref: "master"},
+      {:surface, "~> 0.5.0"},
       {:ex_doc, ">= 0.19.0", only: [:dev, :docs], runtime: false}
     ]
   end
