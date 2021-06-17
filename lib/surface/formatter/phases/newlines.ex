@@ -9,7 +9,7 @@ defmodule Surface.Formatter.Phases.Newlines do
   @behaviour Surface.Formatter.Phase
   alias Surface.Formatter.Phase
 
-  def run(nodes) do
+  def run(nodes, _opts) do
     nodes
     |> collapse_newlines()
     |> prevent_empty_line_at_beginning()

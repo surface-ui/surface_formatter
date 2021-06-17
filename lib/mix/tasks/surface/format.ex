@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Surface.Format do
-  @shortdoc "Formats Surface H-sigils and .sface files in the given files/patterns"
+  @shortdoc "Formats Surface F-sigils and .sface files in the given files/patterns"
 
   @moduledoc """
-  Formats Surface `~H` sigils and `.sface` files in the given files and patterns.
+  Formats Surface `~F` sigils and `.sface` files in the given files and patterns.
 
       mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
 
@@ -74,20 +74,41 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp format_ex_string!(input, opts) do
-    ~r/\n( *)~H"""(.*?)"""/s
-    |> Regex.replace(input, fn _match, indentation, surface_code ->
-      # Indent the entire ~H sigil contents based on the indentation of `~H"""`
-      tabs =
-        indentation
-        |> String.length()
-        |> Kernel.div(2)
+    string =
+      ~r/\n( *)~F"""(.*?)"""/s
+      |> Regex.replace(input, fn _match, indentation, surface_code ->
+        # Indent the entire ~F sigil contents based on the indentation of `~F"""`
+        tabs =
+          indentation
+          |> String.length()
+          |> Kernel.div(2)
 
-      opts = Keyword.put(opts, :indent, tabs)
+        opts = Keyword.put(opts, :indent, tabs)
 
-      "\n#{indentation}~H\"\"\"\n#{
-        surface_code
-        |> Formatter.format_string!(opts)
-      }#{indentation}\"\"\""
+        "\n#{indentation}~F\"\"\"\n#{Formatter.format_string!(surface_code, opts)}#{indentation}\"\"\""
+      end)
+
+    # We do not match on ~F"..." sigils where the first character is `\`
+    # in order to allow for a use case in surface_site, where Surface
+    # code examples are being rendered inside a Markdown component and
+    # contains the string: `~F"\""`
+    string =
+      Regex.replace(~r/~F\"([^\"\\].*?)\"/s, string, fn _match, code ->
+        "~F\"#{Formatter.format_string!(code, opts)}\""
+      end)
+
+    string =
+      Regex.replace(~r/~F\[(.*?)\]/s, string, fn _match, code ->
+        "~F[#{Formatter.format_string!(code, opts)}]"
+      end)
+
+    string =
+      Regex.replace(~r/~F\((.*?)\)/s, string, fn _match, code ->
+        "~F(#{Formatter.format_string!(code, opts)})"
+      end)
+
+    Regex.replace(~r/~F\{(.*?)\}/s, string, fn _match, code ->
+      "~F{#{Formatter.format_string!(code, opts)}}"
     end)
   end
 

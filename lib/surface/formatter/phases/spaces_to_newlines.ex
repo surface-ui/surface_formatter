@@ -12,7 +12,7 @@ defmodule Surface.Formatter.Phases.SpacesToNewlines do
   @behaviour Surface.Formatter.Phase
   alias Surface.{Formatter, Formatter.Phase}
 
-  def run(nodes) do
+  def run(nodes, _opts) do
     nodes
     |> ensure_newlines_surrounding_elements_with_element_children()
     |> convert_spaces_to_newlines_around_edge_children()

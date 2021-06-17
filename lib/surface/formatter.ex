@@ -1,7 +1,7 @@
 defmodule Surface.Formatter do
   @moduledoc "Functions for formatting Surface code snippets."
 
-  alias Surface.Formatter.{Phases, Render}
+  alias Surface.Formatter.Phases
 
   @typedoc """
   Options that can be passed to `Surface.Formatter.format_string!/2`.
@@ -312,14 +312,13 @@ defmodule Surface.Formatter do
   recommended that developers don't blindly run the formatter on an entire
   codebase and commit, but instead sanity check each file to ensure the results
   are desired.
-
   """
   @spec format_string!(String.t(), list(option)) :: String.t()
   def format_string!(string, opts \\ []) do
-    {:ok, parsed} =
+    parsed =
       string
       |> String.trim()
-      |> Surface.Compiler.Parser.parse()
+      |> Surface.Compiler.Parser.parse!(translator: Surface.Formatter.NodeTranslator)
 
     # Ensure the :indent option is set
     opts = Keyword.put_new(opts, :indent, 0)
@@ -329,14 +328,13 @@ defmodule Surface.Formatter do
       Phases.Newlines,
       Phases.SpacesToNewlines,
       Phases.Indent,
-      Phases.FinalNewline
+      Phases.FinalNewline,
+      Phases.BlockExceptions,
+      Phases.Render
     ]
     |> Enum.reduce(parsed, fn phase, nodes ->
-      phase.run(nodes)
+      phase.run(nodes, opts)
     end)
-    |> Enum.map(&Render.node(&1, opts))
-    |> List.flatten()
-    |> Enum.join()
   end
 
   @doc """
@@ -352,6 +350,8 @@ defmodule Surface.Formatter do
   Specifically, don't modify contents of macro components or <pre> and <code> tags.
   """
   @spec render_contents_verbatim?(tag) :: boolean
+  def render_contents_verbatim?("#template"), do: false
+  def render_contents_verbatim?("#slot"), do: false
   def render_contents_verbatim?("#" <> _), do: true
   def render_contents_verbatim?("pre"), do: true
   def render_contents_verbatim?("code"), do: true

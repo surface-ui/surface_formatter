@@ -13,12 +13,16 @@ defmodule Surface.Formatter.Phase do
     - `Surface.Formatter.Phases.SpacesToNewlines`
     - `Surface.Formatter.Phases.Indent`
     - `Surface.Formatter.Phases.FinalNewline`
+    - `Surface.Formatter.Phases.BlockExceptions`
+    - `Surface.Formatter.Phases.Render`
   """
 
   alias Surface.Formatter
 
   @doc "The function implementing the phase. Returns the given nodes with the transformation applied."
-  @callback run(nodes :: [Formatter.formatter_node()]) :: [Formatter.formatter_node()]
+  @callback run(nodes :: [Formatter.formatter_node()], opts :: [Formatter.option()]) :: [
+              Formatter.formatter_node()
+            ]
 
   @typedoc "A node that takes a list of nodes and returns them back after applying a transformation"
   @type node_transformer :: (nodes -> nodes)
@@ -38,8 +42,43 @@ defmodule Surface.Formatter.Phase do
       {tag, attributes, children, meta} ->
         {tag, attributes, transform.(children), meta}
 
+      {:block, name, expr, children, meta} ->
+        {:block, name, expr, transform.(children), meta}
+
       node ->
         node
     end)
+  end
+
+  @doc """
+  Given a list of nodes, find all "element" nodes (HTML elements or Surface components)
+  and transform children of those nodes using the given function.
+
+  Recurses deeply through the tree, unlike `transform_element_children`, which only affects
+  a single layer.
+  """
+  def transform_elements_and_descendants(nodes, transform) when is_function(transform, 1) do
+    nodes
+    |> Enum.map(fn
+      {tag, attributes, children, meta} ->
+        children =
+          children
+          |> transform_elements_and_descendants(transform)
+          |> transform.()
+
+        {tag, attributes, children, meta}
+
+      {:block, name, expr, children, meta} ->
+        children =
+          children
+          |> transform_elements_and_descendants(transform)
+          |> transform.()
+
+        {:block, name, expr, children, meta}
+
+      node ->
+        node
+    end)
+    |> Enum.map(transform)
   end
 end

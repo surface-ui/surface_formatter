@@ -16,7 +16,7 @@ defmodule Surface.Formatter.Phases.Indent do
   @behaviour Surface.Formatter.Phase
   alias Surface.Formatter.Phase
 
-  def run(nodes) do
+  def run(nodes, _opts) do
     # Add initial indent on start of first line
     indent([:indent | nodes])
   end
