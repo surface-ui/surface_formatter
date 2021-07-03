@@ -1095,6 +1095,11 @@ defmodule Surface.FormatterTest do
               Value is empty
             </div>
 
+          {#match "string"}
+
+
+            <div>String Value</div>
+
           {#match _}
 
             Value is something else
