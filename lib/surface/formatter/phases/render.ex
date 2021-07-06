@@ -116,8 +116,15 @@ defmodule Surface.Formatter.Phases.Render do
         [attr] ->
           attr
           |> render_attribute()
-          |> String.slice(1..-2)
-          |> String.trim()
+          |> case do
+            {:do_not_indent_newlines, string} ->
+              string
+
+            string ->
+              string
+              |> String.slice(1..-2)
+              |> String.trim()
+          end
 
         [] ->
           nil
@@ -291,7 +298,14 @@ defmodule Surface.Formatter.Phases.Render do
     #   b
     #   c"
     # />
-    {:do_not_indent_newlines, "#{name}=\"#{String.trim(value)}\""}
+    rendered =
+      if name == :root do
+        inspect(value)
+      else
+        "#{name}=\"#{String.trim(value)}\""
+      end
+
+    {:do_not_indent_newlines, rendered}
   end
 
   # For `true` boolean attributes, simply including the name of the attribute
@@ -308,8 +322,8 @@ defmodule Surface.Formatter.Phases.Render do
   defp render_attribute({name, {:attribute_expr, expression, expr_meta}, meta})
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
-    # to support Surface sugar like this: `{{ foo: "bar" }}` (which is
-    # equivalent to `{{ [foo: "bar"] }}`
+    # to support Surface sugar like this: `{foo: "bar"}` (which is
+    # equivalent to `{[foo: "bar"]}}`
     quoted_wrapped_expression =
       try do
         Code.string_to_quoted!("[#{expression}]")
@@ -323,7 +337,7 @@ defmodule Surface.Formatter.Phases.Render do
 
     case quoted_wrapped_expression do
       [literal] when is_boolean(literal) or is_binary(literal) ->
-        # The code is a literal value in Surface brackets, e.g. {{ 12345 }} or {{ true }},
+        # The code is a literal value in Surface brackets, e.g. {"foo"} or {true},
         # that can exclude the brackets, so render it without the brackets
         render_attribute({name, literal, meta})
 
@@ -391,7 +405,7 @@ defmodule Surface.Formatter.Phases.Render do
             |> Code.format_string!()
             |> to_string()
 
-          "{{ #{formatted_expression} }}"
+          "{#{formatted_expression}}"
       end)
       |> Enum.join()
 
