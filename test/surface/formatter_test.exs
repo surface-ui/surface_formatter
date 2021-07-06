@@ -233,7 +233,7 @@ defmodule Surface.FormatterTest do
       )
     end
 
-    test "<pre>, <code>, and <#MacroComponent> tags can contain expressions or components, but the string portions are untouched" do
+    test "<pre>, <code>, <script>, and <#MacroComponent> tags can contain expressions or components, but the string portions are untouched" do
       # Note that the output looks pretty messy, but it's because
       # we're retaining 100% of the exact characters between the
       # <pre> and </pre> tags, etc.
@@ -255,6 +255,11 @@ defmodule Surface.FormatterTest do
 
 
               <#MacroComponent> Foo {@bar} baz </#MacroComponent>
+
+        <script type="application/javascript">
+             foo();
+           var bar="baz";
+        </script>
         """,
         """
         <pre>
@@ -267,6 +272,11 @@ defmodule Surface.FormatterTest do
             </code>
 
         <#MacroComponent> Foo {@bar} baz </#MacroComponent>
+
+        <script type="application/javascript">
+             foo();
+           var bar="baz";
+        </script>
         """
       )
     end
