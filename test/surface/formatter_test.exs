@@ -1490,4 +1490,21 @@ defmodule Surface.FormatterTest do
       """
     )
   end
+
+  test "<template> tags are not rendered as <#template>" do
+    assert_formatter_outputs(
+      """
+      <template>
+        <p> Foo </p>
+      </template>
+      """,
+      """
+      <template>
+        <p>
+          Foo
+        </p>
+      </template>
+      """
+    )
+  end
 end

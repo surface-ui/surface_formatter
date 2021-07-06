@@ -15,14 +15,6 @@ defmodule Surface.Formatter.NodeTranslator do
     {{:comment, comment, meta}, state}
   end
 
-  def handle_node("template", attributes, body, meta, state, context) do
-    handle_node("#template", attributes, body, meta, state, context)
-  end
-
-  def handle_node("slot", attributes, body, meta, state, context) do
-    handle_node("#slot", attributes, body, meta, state, context)
-  end
-
   def handle_node(name, attributes, body, meta, state, _context) do
     {{name, attributes, body, to_meta(meta)}, state}
   end
