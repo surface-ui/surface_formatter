@@ -109,7 +109,7 @@ defmodule Surface.Formatter.Phases.Render do
   end
 
   def render_node({:block, name, expr, children, _meta}, opts) do
-    main_block_element = name in ["if", "for", "case"]
+    main_block_element = name in ["if", "unless", "for", "case"]
 
     expr =
       case expr do

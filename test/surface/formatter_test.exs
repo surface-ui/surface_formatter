@@ -1034,6 +1034,31 @@ defmodule Surface.FormatterTest do
       )
     end
 
+    test "unless../unless block expressions" do
+      assert_formatter_outputs(
+        """
+        <div> <div>
+        {#unless @new_user}
+        <p>
+        Welcome back!
+        </p>
+        {/unless}
+        </div> </div>
+        """,
+        """
+        <div>
+          <div>
+            {#unless @new_user}
+              <p>
+                Welcome back!
+              </p>
+            {/unless}
+          </div>
+        </div>
+        """
+      )
+    end
+
     test "for..else../for block expressions" do
       assert_formatter_outputs(
         """
