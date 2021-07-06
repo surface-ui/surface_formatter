@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.1 (2021-07-06)
+
+  * Fix crash with `{#match "string"}` scenario (#32)
+  * Stop removing `{/unless}` (#33)
+  * Stop formatting contents of `<script>` tags (#34)
+  * Stop performing conversion of pre-0.5 `<template>` and `<slot>` to `<#template>` and `<#slot>` (#35)
+
 ## v0.5.0 (2021-06-17)
 
   * Support new Surface syntax (#21 and #22)
