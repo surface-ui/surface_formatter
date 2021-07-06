@@ -1095,6 +1095,10 @@ defmodule Surface.FormatterTest do
               Value is empty
             </div>
 
+          {#match "string"}
+
+            <p>String match</p>
+
           {#match _}
 
             Value is something else
@@ -1112,6 +1116,8 @@ defmodule Surface.FormatterTest do
             <div class={@class}>
               Value is empty
             </div>
+          {#match "string"}
+            <p>String match</p>
           {#match _}
             Value is something else
         {/case}
