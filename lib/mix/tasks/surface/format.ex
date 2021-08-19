@@ -63,6 +63,14 @@ defmodule Mix.Tasks.Surface.Format do
   # Functions unique to surface.format (Everything else is taken from Mix.Tasks.Format)
   #
 
+  defp format_file_contents!(:stdin, input, opts) do
+    try do
+      Formatter.format_string!(input, opts)
+    rescue
+      _error -> format_ex_string!(input, opts)
+    end
+  end
+
   defp format_file_contents!(file, input, opts) do
     case Path.extname(file) do
       ".sface" ->
@@ -319,6 +327,10 @@ defmodule Mix.Tasks.Surface.Format do
     end
 
     opts
+  end
+
+  defp read_file(:stdin) do
+    {IO.stream() |> Enum.to_list() |> IO.iodata_to_binary(), file: "stdin"}
   end
 
   defp read_file(file) do
