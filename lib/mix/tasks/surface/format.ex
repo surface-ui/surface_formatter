@@ -64,10 +64,12 @@ defmodule Mix.Tasks.Surface.Format do
   #
 
   defp format_file_contents!(:stdin, input, opts) do
-    try do
-      Formatter.format_string!(input, opts)
-    rescue
-      _error -> format_ex_string!(input, opts)
+    case Code.string_to_quoted(input) do
+      {:ok, _} ->
+        format_ex_string!(input, opts)
+
+      {:error, _} ->
+        Formatter.format_string!(input, opts)
     end
   end
 
