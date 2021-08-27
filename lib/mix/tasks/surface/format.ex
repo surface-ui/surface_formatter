@@ -333,7 +333,7 @@ defmodule Mix.Tasks.Surface.Format do
   end
 
   defp read_file(:stdin) do
-    {IO.stream() |> Enum.to_list() |> IO.iodata_to_binary(), file: "stdin"}
+    {IO.stream(:stdio, :line) |> Enum.to_list() |> IO.iodata_to_binary(), file: "stdin"}
   end
 
   defp read_file(file) do
