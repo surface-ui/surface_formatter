@@ -4,7 +4,10 @@ defmodule Mix.Tasks.Surface.Format do
   @moduledoc """
   Formats Surface `~F` sigils and `.sface` files in the given files and patterns.
 
-      mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+  ```bash
+  $ mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
+  $ cat path/to/file.ex | mix surface.format -
+  ```
 
   Takes the same options as `mix format` except for `--check-equivalent`.
 
