@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2 (2021-08-27)
+
+  * Enable reading from stdin (#37)
+  * Stop turning `:if={true}` into `:if` (#39)
+  * Stop endlessly indenting strings with newlines in list attributes (#40)
+
 ## v0.5.1 (2021-07-06)
 
   * Fix crash with `{#match "string"}` scenario (#32)
