@@ -347,8 +347,8 @@ defmodule Surface.Formatter.Phases.Render do
       _ ->
         # This is a somewhat hacky way of checking if the contents are something like:
         #
-        #   foo={{ "bar", @baz, :qux }}
-        #   foo={{ "bar", baz: true }}
+        #   foo={"bar", @baz, :qux}
+        #   foo={"bar", baz: true}
         #
         # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
         has_invisible_brackets =
@@ -359,13 +359,29 @@ defmodule Surface.Formatter.Phases.Render do
 
         formatted_expression =
           if has_invisible_brackets do
-            # Handle keyword lists, which will be stripped of the outer brackets
+            # handle keyword lists, which will be stripped of the outer brackets
             # per surface syntax sugar
+            formatted =
+              "[#{expression}]"
+              |> Code.format_string!()
+              |> Enum.slice(1..-2)
+              |> to_string()
 
+            # handle scenario where list contains string(s) with newlines;
+            # in order to ensure the formatter is idempotent (always emits
+            # the same output when run more than once), we dedent newlines
+            # in strings because multi-line attributes are later indented
             "[#{expression}]"
-            |> Code.format_string!()
-            |> Enum.slice(1..-2)
-            |> to_string()
+            |> Code.string_to_quoted!()
+            |> Enum.filter(fn
+              string when is_binary(string) -> String.contains?(string, "\n")
+              _ -> false
+            end)
+            |> Enum.uniq()
+            |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
+              dedented = String.replace(string_with_newlines, "\n  ", "\n")
+              String.replace(formatted, string_with_newlines, dedented)
+            end)
           else
             expression
             |> Code.format_string!(locals_without_parens: [...: 1])
