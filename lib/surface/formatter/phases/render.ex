@@ -310,6 +310,9 @@ defmodule Surface.Formatter.Phases.Render do
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
+  defp render_attribute({":" <> _ = name, true, _meta}),
+    do: "#{name}={true}"
+
   defp render_attribute({name, true, _meta}),
     do: "#{name}"
 
