@@ -971,6 +971,12 @@ defmodule Surface.FormatterTest do
         """
       )
     end
+
+    test "true boolean attribute in directive" do
+      assert_formatter_doesnt_change("""
+      <div :if={true} />
+      """)
+    end
   end
 
   describe "[blocks]" do

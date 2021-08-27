@@ -143,9 +143,11 @@ defmodule Surface.Formatter.Phases.Render do
     next_opts = Keyword.update(opts, :indent, 0, &(&1 + next_indent))
     rendered_children = Enum.map(children, &render_node(&1, next_opts))
 
-    "#{opening}#{rendered_children}#{if main_block_element do
-      "{/#{name}}"
-    end}"
+    "#{opening}#{rendered_children}#{
+      if main_block_element do
+        "{/#{name}}"
+      end
+    }"
   end
 
   def render_node({"#template", [{"slot", slot_name, _} | attributes], children, meta}, opts) do
@@ -179,9 +181,11 @@ defmodule Surface.Formatter.Phases.Render do
       "<" <>
         tag <>
         attributes_on_same_line <>
-        "#{if self_closing do
-          " /"
-        end}>"
+        "#{
+          if self_closing do
+            " /"
+          end
+        }>"
 
     line_length = opts[:line_length] || @default_line_length
     attributes_contain_newline = String.contains?(attributes_on_same_line, "\n")
@@ -219,9 +223,11 @@ defmodule Surface.Formatter.Phases.Render do
         [
           "<#{tag}",
           indented_attributes,
-          "#{indentation}#{if self_closing do
-            "/"
-          end}>"
+          "#{indentation}#{
+            if self_closing do
+              "/"
+            end
+          }>"
         ]
         |> List.flatten()
         |> Enum.join("\n")
@@ -254,9 +260,11 @@ defmodule Surface.Formatter.Phases.Render do
         "<" <>
           tag <>
           attributes <>
-          "#{if self_closing and not is_void_element?(tag) do
-            " /"
-          end}>"
+          "#{
+            if self_closing and not is_void_element?(tag) do
+              " /"
+            end
+          }>"
       end
 
     rendered_children =
@@ -310,6 +318,9 @@ defmodule Surface.Formatter.Phases.Render do
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
+  defp render_attribute({":" <> _ = name, true, _meta}),
+    do: "#{name}={true}"
+
   defp render_attribute({name, true, _meta}),
     do: "#{name}"
 
