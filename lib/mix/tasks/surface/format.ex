@@ -64,6 +64,7 @@ defmodule Mix.Tasks.Surface.Format do
   #
 
   defp format_file_contents!(:stdin, input, opts) do
+    # determine whether the input is Elixir or Surface code by checking if `Code.string_to_quoted` can parse it
     case Code.string_to_quoted(input) do
       {:ok, _} ->
         format_ex_string!(input, opts)
