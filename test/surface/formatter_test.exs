@@ -1513,4 +1513,60 @@ defmodule Surface.FormatterTest do
       """
     )
   end
+
+  test "Multi-line strings in lists in attributes aren't indented every time the formatter is ran" do
+    assert_formatter_outputs(
+      ~S"""
+      <TextInput
+        class={
+          "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
+           text-color-y-100 box-border border border-solid border-k-100 rounded transition
+           ease-in placeholder-hhh-100 placeholder-opacity-100 disabled:opacity-50
+           disabled:cursor-not-allowed focus:border-m-100 focus:outline-none
+           no-scrollbar invalid:shadow-none invalid:border-t-100 #{@class}",
+          foo: @foo,
+          bar: @bar == "yes"
+        }
+      />
+      """,
+      ~S"""
+      <TextInput class={
+        "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
+           text-color-y-100 box-border border border-solid border-k-100 rounded transition
+           ease-in placeholder-hhh-100 placeholder-opacity-100 disabled:opacity-50
+           disabled:cursor-not-allowed focus:border-m-100 focus:outline-none
+           no-scrollbar invalid:shadow-none invalid:border-t-100 #{@class}",
+        foo: @foo,
+        bar: @bar == "yes"
+      } />
+      """
+    )
+
+    assert_formatter_doesnt_change(~S"""
+    <TextInput
+      class={
+        "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
+         text-color-y-100 box-border border border-solid border-k-100 rounded transition
+         ease-in placeholder-h-100 placeholder-opacity-100 disabled:opacity-50
+         disabled:cursor-not-allowed focus:border-m-100 focus:outline-none
+         no-scrollbar invalid:shadow-none invalid:border-t-100 {@class}",
+        @foo,
+        @bar
+      }
+      field={:foo}
+    />
+    """)
+
+    assert_formatter_doesnt_change(~S"""
+    <TextInput class={
+      "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
+       text-color-y-100 box-border border border-solid border-k-100 rounded transition
+       ease-in placeholder-hhh-100 placeholder-opacity-100 disabled:opacity-50
+       disabled:cursor-not-allowed focus:border-m-100 focus:outline-none
+       no-scrollbar invalid:shadow-none invalid:border-t-100 #{@class}",
+      foo: @foo,
+      bar: @bar == "yes"
+    } />
+    """)
+  end
 end
