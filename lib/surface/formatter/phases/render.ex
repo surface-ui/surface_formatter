@@ -155,10 +155,12 @@ defmodule Surface.Formatter.Phases.Render do
   def render_node({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])
-    rendered_attributes = Enum.map(
-      attributes,
-      & render_attribute(&1, only_attribute: length(attributes) == 1)
-    )
+
+    rendered_attributes =
+      Enum.map(
+        attributes,
+        &render_attribute(&1, only_attribute: length(attributes) == 1)
+      )
 
     attributes_on_same_line =
       case rendered_attributes do
@@ -291,6 +293,7 @@ defmodule Surface.Formatter.Phases.Render do
   @spec render_attribute({String.t(), term, map}, [render_attribute_option]) ::
           String.t() | {:do_not_indent_newlines, String.t()}
   defp render_attribute(attribute, opts \\ [])
+
   defp render_attribute({name, value, _meta}, _opts) when is_binary(value) do
     # This is a string, and it might contain newlines. By returning
     # `{:do_not_indent_newlines, formatted}` we instruct `render_node/1`
@@ -438,7 +441,7 @@ defmodule Surface.Formatter.Phases.Render do
     "#{name}=\"#{formatted_expressions}\""
   end
 
-  @spec quoted_strings_with_newlines(Macro.t) :: [String.t]
+  @spec quoted_strings_with_newlines(Macro.t()) :: [String.t()]
   defp quoted_strings_with_newlines(nodes) do
     Enum.flat_map(nodes, fn
       string when is_binary(string) ->
