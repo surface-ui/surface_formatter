@@ -155,7 +155,12 @@ defmodule Surface.Formatter.Phases.Render do
   def render_node({tag, attributes, children, _meta}, opts) do
     self_closing = Enum.empty?(children)
     indentation = String.duplicate(@tab, opts[:indent])
-    rendered_attributes = Enum.map(attributes, &render_attribute/1)
+
+    rendered_attributes =
+      Enum.map(
+        attributes,
+        &render_attribute(&1, only_attribute: length(attributes) == 1)
+      )
 
     attributes_on_same_line =
       case rendered_attributes do
@@ -283,9 +288,13 @@ defmodule Surface.Formatter.Phases.Render do
     end
   end
 
-  @spec render_attribute({String.t(), term, map}) ::
+  @type render_attribute_option :: {:only_attribute, boolean}
+
+  @spec render_attribute({String.t(), term, map}, [render_attribute_option]) ::
           String.t() | {:do_not_indent_newlines, String.t()}
-  defp render_attribute({name, value, _meta}) when is_binary(value) do
+  defp render_attribute(attribute, opts \\ [])
+
+  defp render_attribute({name, value, _meta}, _opts) when is_binary(value) do
     # This is a string, and it might contain newlines. By returning
     # `{:do_not_indent_newlines, formatted}` we instruct `render_node/1`
     # to leave newlines alone instead of adding extra tabs at the
@@ -310,19 +319,19 @@ defmodule Surface.Formatter.Phases.Render do
 
   # For `true` boolean attributes, simply including the name of the attribute
   # without `=true` is shorthand for `=true`.
-  defp render_attribute({":" <> _ = name, true, _meta}),
+  defp render_attribute({":" <> _ = name, true, _meta}, _opts),
     do: "#{name}={true}"
 
-  defp render_attribute({name, true, _meta}),
+  defp render_attribute({name, true, _meta}, _opts),
     do: "#{name}"
 
-  defp render_attribute({name, false, _meta}),
+  defp render_attribute({name, false, _meta}, _opts),
     do: "#{name}={false}"
 
-  defp render_attribute({name, value, _meta}) when is_integer(value),
+  defp render_attribute({name, value, _meta}, _opts) when is_integer(value),
     do: "#{name}={#{Code.format_string!("#{value}")}}"
 
-  defp render_attribute({name, {:attribute_expr, expression, expr_meta}, meta})
+  defp render_attribute({name, {:attribute_expr, expression, expr_meta}, meta}, opts)
        when is_binary(expression) do
     # Wrap it in square brackets (and then remove after formatting)
     # to support Surface sugar like this: `{foo: "bar"}` (which is
@@ -363,25 +372,26 @@ defmodule Surface.Formatter.Phases.Render do
             # per surface syntax sugar
             formatted =
               "[#{expression}]"
-              |> Code.format_string!()
+              |> Code.format_string!(locals_without_parens: [...: 1])
               |> Enum.slice(1..-2)
               |> to_string()
 
-            # handle scenario where list contains string(s) with newlines;
-            # in order to ensure the formatter is idempotent (always emits
-            # the same output when run more than once), we dedent newlines
-            # in strings because multi-line attributes are later indented
-            "[#{expression}]"
-            |> Code.string_to_quoted!()
-            |> Enum.filter(fn
-              string when is_binary(string) -> String.contains?(string, "\n")
-              _ -> false
-            end)
-            |> Enum.uniq()
-            |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
-              dedented = String.replace(string_with_newlines, "\n  ", "\n")
-              String.replace(formatted, string_with_newlines, dedented)
-            end)
+            if opts[:only_attribute] do
+              formatted
+            else
+              # handle scenario where list contains string(s) with newlines;
+              # in order to ensure the formatter is idempotent (always emits
+              # the same output when run more than once), we dedent newlines
+              # in strings because multi-line attributes are later indented
+              "[#{expression}]"
+              |> Code.string_to_quoted!()
+              |> quoted_strings_with_newlines()
+              |> Enum.uniq()
+              |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
+                dedented = String.replace(string_with_newlines, "\n  ", "\n")
+                String.replace(formatted, string_with_newlines, dedented)
+              end)
+            end
           else
             expression
             |> Code.format_string!(locals_without_parens: [...: 1])
@@ -410,7 +420,7 @@ defmodule Surface.Formatter.Phases.Render do
     end
   end
 
-  defp render_attribute({name, strings_and_expressions, _meta})
+  defp render_attribute({name, strings_and_expressions, _meta}, _opts)
        when is_list(strings_and_expressions) do
     formatted_expressions =
       strings_and_expressions
@@ -429,6 +439,25 @@ defmodule Surface.Formatter.Phases.Render do
       |> Enum.join()
 
     "#{name}=\"#{formatted_expressions}\""
+  end
+
+  @spec quoted_strings_with_newlines(Macro.t()) :: [String.t()]
+  defp quoted_strings_with_newlines(nodes) do
+    Enum.flat_map(nodes, fn
+      string when is_binary(string) ->
+        if String.contains?(string, "\n") do
+          [string]
+        else
+          []
+        end
+
+      {:<<>>, _, nodes} when is_list(nodes) ->
+        quoted_strings_with_newlines(nodes)
+
+      _ ->
+        []
+    end)
+    |> List.flatten()
   end
 
   defp is_keyword_item_with_interpolated_key?(item) do
