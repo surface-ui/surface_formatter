@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.3 (2021-08-30)
+
+  * Stop endlessly indenting attribute strings with interpolation (#41)
+
 ## v0.5.2 (2021-08-27)
 
   * Enable reading from stdin (#37)
