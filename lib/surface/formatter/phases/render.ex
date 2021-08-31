@@ -115,7 +115,7 @@ defmodule Surface.Formatter.Phases.Render do
       case expr do
         [attr] ->
           attr
-          |> render_attribute()
+          |> render_attribute([])
           |> case do
             {:do_not_indent_newlines, string} ->
               string
@@ -159,7 +159,7 @@ defmodule Surface.Formatter.Phases.Render do
     rendered_attributes =
       Enum.map(
         attributes,
-        &render_attribute(&1, only_attribute: length(attributes) == 1)
+        &render_attribute(&1, attribute: attributes)
       )
 
     attributes_on_same_line =
@@ -288,12 +288,10 @@ defmodule Surface.Formatter.Phases.Render do
     end
   end
 
-  @type render_attribute_option :: {:only_attribute, boolean}
+  @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute]}
 
   @spec render_attribute({String.t(), term, map}, [render_attribute_option]) ::
           String.t() | {:do_not_indent_newlines, String.t()}
-  defp render_attribute(attribute, opts \\ [])
-
   defp render_attribute({name, value, _meta}, _opts) when is_binary(value) do
     # This is a string, and it might contain newlines. By returning
     # `{:do_not_indent_newlines, formatted}` we instruct `render_node/1`
@@ -331,118 +329,45 @@ defmodule Surface.Formatter.Phases.Render do
   defp render_attribute({name, value, _meta}, _opts) when is_integer(value),
     do: "#{name}={#{Code.format_string!("#{value}")}}"
 
-  defp render_attribute({name, {:attribute_expr, expression, expr_meta}, meta}, opts)
-       when is_binary(expression) do
-    # Wrap it in square brackets (and then remove after formatting)
-    # to support Surface sugar like this: `{foo: "bar"}` (which is
-    # equivalent to `{[foo: "bar"]}}`
-    quoted_wrapped_expression =
-      try do
-        Code.string_to_quoted!("[#{expression}]")
-      rescue
-        _exception ->
-          # With some expressions such as function calls without parentheses
-          # (e.g. `Enum.map @items, & &1.foo`) wrapping in square brackets will
-          # emit invalid syntax, so we must catch that here
-          Code.string_to_quoted!(expression)
-      end
+  defp render_attribute({name, {:attribute_expr, _, %{tagged_expr?: true}}, _}, _) do
+    "{=@#{name}}"
+  end
 
-    case quoted_wrapped_expression do
-      [literal] when is_boolean(literal) or is_binary(literal) ->
-        # The code is a literal value in Surface brackets, e.g. {"foo"} or {true},
-        # that can exclude the brackets, so render it without the brackets
-        render_attribute({name, literal, meta})
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}, opts) when name in [":attrs", ":props"] do
+    "{...#{format_attribute_expression(expression, opts)}}"
+  end
 
-      _ ->
-        # This is a somewhat hacky way of checking if the contents are something like:
-        #
-        #   foo={"bar", @baz, :qux}
-        #   foo={"bar", baz: true}
-        #
-        # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
-        has_invisible_brackets =
-          Keyword.keyword?(quoted_wrapped_expression) or
-            (is_list(quoted_wrapped_expression) and length(quoted_wrapped_expression) > 1) or
-            (is_list(quoted_wrapped_expression) and
-               Enum.any?(quoted_wrapped_expression, &is_keyword_item_with_interpolated_key?/1))
+  defp render_attribute({:root, {:attribute_expr, expression, _expr_meta}, _meta}, opts) do
+    case format_attribute_expression(expression, opts) do
+      "... " <> expression ->
+        "{...#{expression}}"
 
-        formatted_expression =
-          if has_invisible_brackets do
-            # handle keyword lists, which will be stripped of the outer brackets
-            # per surface syntax sugar
-            formatted =
-              "[#{expression}]"
-              |> Code.format_string!(locals_without_parens: [...: 1])
-              |> Enum.slice(1..-2)
-              |> to_string()
-
-            if opts[:only_attribute] do
-              formatted
-            else
-              # handle scenario where list contains string(s) with newlines;
-              # in order to ensure the formatter is idempotent (always emits
-              # the same output when run more than once), we dedent newlines
-              # in strings because multi-line attributes are later indented
-              "[#{expression}]"
-              |> Code.string_to_quoted!()
-              |> quoted_strings_with_newlines()
-              |> Enum.uniq()
-              |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
-                dedented = String.replace(string_with_newlines, "\n  ", "\n")
-                String.replace(formatted, string_with_newlines, dedented)
-              end)
-            end
-          else
-            expression
-            |> Code.format_string!(locals_without_parens: [...: 1])
-            |> to_string()
-          end
-
-        case {name, formatted_expression, expr_meta} do
-          {:root, "... " <> expression, _} ->
-            "{...#{expression}}"
-
-          {:root, _, _} ->
-            "{#{formatted_expression}}"
-
-          {":attrs", _, _} ->
-            "{...#{formatted_expression}}"
-
-          {":props", _, _} ->
-            "{...#{formatted_expression}}"
-
-          {_, _, %{tagged_expr?: true}} ->
-            "{=@#{name}}"
-
-          _ ->
-            "#{name}={#{formatted_expression}}"
-        end
+      formatted ->
+        "{#{formatted}}"
     end
   end
 
-  defp render_attribute({name, strings_and_expressions, _meta}, _opts)
-       when is_list(strings_and_expressions) do
-    formatted_expressions =
-      strings_and_expressions
-      |> Enum.map(fn
-        string when is_binary(string) ->
-          string
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, meta}, opts) do
+    case quoted_wrapped_expression(expression) do
+      [literal] when is_boolean(literal) or is_binary(literal) ->
+        # The expression is a literal value in Surface brackets, e.g. {"foo"} or {true},
+        # that can exclude the brackets, so render it without the brackets
+        render_attribute({name, literal, meta}, opts)
 
-        {:attribute_expr, expression, _expr_meta} ->
-          formatted_expression =
-            expression
-            |> Code.format_string!()
-            |> to_string()
-
-          "{#{formatted_expression}}"
-      end)
-      |> Enum.join()
-
-    "#{name}=\"#{formatted_expressions}\""
+      _ ->
+        "#{name}={#{format_attribute_expression(expression, opts)}}"
+    end
   end
 
-  @spec quoted_strings_with_newlines(Macro.t()) :: [String.t()]
-  defp quoted_strings_with_newlines(nodes) do
+  @spec quoted_strings_with_newlines(Macro.t() | String.t()) :: [String.t()]
+  # given an attribute expression, return a list of strings that have newlines in them
+  defp quoted_strings_with_newlines(attribute_expression) when is_binary(attribute_expression) do
+    attribute_expression
+    |> quoted_wrapped_expression()
+    |> quoted_strings_with_newlines()
+  end
+
+  defp quoted_strings_with_newlines(nodes) when is_list(nodes) do
     Enum.flat_map(nodes, fn
       string when is_binary(string) ->
         if String.contains?(string, "\n") do
@@ -469,5 +394,70 @@ defmodule Surface.Formatter.Phases.Render do
 
   defp is_void_element?(tag) do
     tag in ~w(area base br col command embed hr img input keygen link meta param source track wbr)
+  end
+
+  defp quoted_wrapped_expression(expression) when is_binary(expression) do
+    # Wrap it in square brackets (and then remove after formatting) to support
+    # Surface sugar like this: `{foo: "bar"}` (equivalent to `{[foo: "bar"]}}`
+    Code.string_to_quoted!("[#{expression}]")
+  rescue
+    _exception ->
+      # With some expressions such as function calls without parentheses
+      # (e.g. `Enum.map @items, & &1.foo`) wrapping in square brackets will
+      # emit invalid syntax, so we must catch that here
+      Code.string_to_quoted!(expression)
+  end
+
+  @spec format_attribute_expression(String.t, [render_attribute_option]) :: String.t
+  defp format_attribute_expression(expression, opts \\ [])
+  defp format_attribute_expression(expression, opts) when is_binary(expression) do
+    if has_invisible_brackets?(expression) do
+      # handle keyword lists, which will be stripped of the outer brackets per surface syntax sugar
+      formatted =
+        "[#{expression}]"
+        |> Code.format_string!(locals_without_parens: [...: 1])
+        |> Enum.slice(1..-2)
+        |> to_string()
+
+      if length(Keyword.get(opts, :attributes, [])) > 1 do
+        # handle scenario where list contains string(s) with newlines;
+        # in order to ensure the formatter is idempotent (always emits
+        # the same output when run more than once), we dedent newlines
+        # in strings because multi-line attributes are later indented
+        expression
+        |> quoted_strings_with_newlines()
+        |> Enum.uniq()
+        |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
+          dedented = String.replace(string_with_newlines, "\n  ", "\n")
+          String.replace(formatted, string_with_newlines, dedented)
+        end)
+      else
+        formatted
+      end
+    else
+      expression
+      |> Code.format_string!(locals_without_parens: [...: 1])
+      |> to_string()
+    end
+  end
+
+  @spec has_invisible_brackets?(Macro.t | String.t) :: boolean
+  defp has_invisible_brackets?(expression) when is_binary(expression) do
+    expression
+    |> quoted_wrapped_expression()
+    |> has_invisible_brackets?()
+  end
+
+  defp has_invisible_brackets?(quoted_wrapped_expression) do
+    # This is a somewhat hacky way of checking if the contents are something like:
+    #
+    #   foo={"bar", @baz, :qux}
+    #   foo={"bar", baz: true}
+    #
+    # which is valid Surface syntax; an outer list wrapping the entire expression is implied.
+    Keyword.keyword?(quoted_wrapped_expression) or
+      (is_list(quoted_wrapped_expression) and length(quoted_wrapped_expression) > 1) or
+      (is_list(quoted_wrapped_expression) and
+         Enum.any?(quoted_wrapped_expression, &is_keyword_item_with_interpolated_key?/1))
   end
 end
