@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.4 (2021-08-31)
+
+  * Stop endlessly indenting attribute strings with interpolation whenever node is indented (#43)
+
 ## v0.5.3 (2021-08-30)
 
   * Stop endlessly indenting attribute strings with interpolation (#41)
