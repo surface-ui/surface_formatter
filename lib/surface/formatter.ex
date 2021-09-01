@@ -66,7 +66,7 @@ defmodule Surface.Formatter do
 
     - HTML/Surface elements are indented to the right of their parents.
     - Attributes are split on multiple lines if the line is too long; otherwise on the same line.
-    - Elixir code snippets (inside `{{ }}`) are ran through the Elixir code formatter.
+    - Elixir code snippets (inside `{ }`) are ran through the Elixir code formatter.
     - Lack of whitespace is preserved, so that intended behaviors are not removed.
       (For example, `<span>Foo bar baz</span>` will not have newlines or spaces added.)
 
@@ -89,12 +89,13 @@ defmodule Surface.Formatter do
   ### Whitespace that exists
 
   As in regular HTML, any string of continuous whitespace is considered
-  equivalent to any other string of continuous whitespace. There are three
+  equivalent to any other string of continuous whitespace. There are four
   exceptions:
 
   1. Macro components (with names starting with `#`, such as `<#Markdown>`)
   2. `<pre>` tags
   3. `<code>` tags
+  4. `<script>` tags
 
   The contents of those tags are considered whitespace-sensitive, and developers
   should sanity check after running the formatter.
@@ -152,8 +153,8 @@ defmodule Surface.Formatter do
   (Below, "element" means an HTML element or a Surface component.)
 
   1. If an element contains other elements as children, it will be surrounded by newlines.
-  1. If there is a space after an opening tag or before a closing tag, it is converted to a newline.
-  1. If a closing tag is put on its own line, the formatter ensures there's a newline before the next sibling node.
+  2. If there is a space after an opening tag or before a closing tag, it is converted to a newline.
+  3. If a closing tag is put on its own line, the formatter ensures there's a newline before the next sibling node.
 
   Since SurfaceFormatter doesn't know if a component represents an inline or block element,
   it does not currently make distinctions between elements that should or should not be
@@ -200,17 +201,16 @@ defmodule Surface.Formatter do
 
   ### Inline literals
 
-  String, integer, and boolean literals are placed after the `=` without any
-  interpolation brackets (`{{ }}`). This means that
+  String literals are placed after the `=` without any interpolation brackets (`{ }`). This means that
 
   ```html
-  <Component foo={{ "hello" }} bar={{123}} secure={{   false }} />
+  <Component foo={"hello"} />
   ```
 
   will be formatted as
 
   ```html
-  <Component foo="hello" bar=123 secure=false />
+  <Component foo="hello" />
   ```
 
   One exception is that `true` boolean literals are formatted using the Surface
@@ -218,7 +218,7 @@ defmodule Surface.Formatter do
   passed in as `true`.  For example,
 
   ```html
-  <Component secure={{ true }} />
+  <Component secure={true} />
   ```
 
   and
@@ -233,16 +233,16 @@ defmodule Surface.Formatter do
   <Component secure />
   ```
 
-  ### Interpolation (`{{ }}` brackets)
+  ### Interpolation (`{ }` brackets)
 
-  Attributes that interpolate Elixir code with `{{ }}` brackets are ran through
+  Attributes that interpolate Elixir code with `{ }` brackets are ran through
   the Elixir code formatter.
 
   This means that:
 
-    - `<Foo num=123456 />` becomes `<Foo num=123_456 />`
-    - `list={{[1,2,3]}}` becomes `list={{ [1, 2, 3] }}`
-    - `things={{  %{one: "1", two: "2"}}}` becomes `things={{ %{ one: "1", two: "2" } }}`
+    - `<Foo num={123456} />` becomes `<Foo num={123_456} />`
+    - `list={[1,2,3]}` becomes `list={[1, 2, 3]}`
+    - `things={%{  one: "1",   two: "2"}}` becomes `things={%{one: "1", two: "2"}}`
 
   Sometimes the Elixir code formatter will add line breaks in the formatted
   expression. In that case, SurfaceFormatter will ensure indentation lines up. If
@@ -250,32 +250,85 @@ defmodule Surface.Formatter do
   tag name, for example:
 
   ```html
-  <Component list={{[
+  <Component list={[
     {"foo", foo},
     {"bar", bar}
-  ]}} />
+  ]} />
   ```
 
   However, if there are multiple attributes it will put them on separate lines:
 
   ```html
   <Child
-    list={{[
+    list={[
       {"foo", foo},
       {"bar", bar}
-    ]}}
-    int=123
+    ]}
+    int={123}
   />
   ```
 
-  Note in the above example that if the Elixir code formatter introduces
-  newlines, whitespace between the expression and the interpolation brackets is
-  collapsed.  That is to say the formatter will emit `list={{[` instead of
-  `list={{ [`.
+  ### Whitespace in string attributes
+
+  It's critical that a code formatter _never_ change the semantics of the code
+  it modifies.  In other words, the behavior of a program should never change
+  due to a code formatter.  The **Whitespace** section above outlines how
+  `SurfaceFormatter` preserves code semantics by refusing to modify contents of
+  `<script>`, `<code>` and `<pre>` tags as well as macro components. And for
+  the same reason, the formatter does not introduce whitespace between HTML
+  tags when there is none.
+
+  This principle is relevant to string attributes, such as:
+
+  ```html
+  <MyComponent string_prop="  string  with  whitespace  " />
+  ```
+
+  `SurfaceFormatter` cannot reliably guess whether application behavior will be
+  changed by formatting the contents of a string. For example, consider a
+  component with the following interface:
+
+  ```html
+  <List items="
+  apples (fuji)
+  oranges (navel)
+  bell peppers (green)
+  " />
+  ```
+
+  The component internally splits on newline characters and outputs the following HTML:
+
+  ```html
+  <ul>
+    <li>apples (fuji)</li>
+    <li>oranges (navel)</li>
+    <li>bell peppers (green)</li>
+  </ul>
+  ```
+
+  If `SurfaceFormatter` assumes it is safe to modify whitespace in string
+  attributes, then the Surface code would likely change to this:
+
+  ```html
+  <List items="apples (fuji) oranges (navel) bell peppers (green)" />
+  ```
+
+  Which would output the following HTML:
+
+  ```html
+  <ul>
+    <li>apples (fuji) oranges (navel) bell peppers (green)</li>
+  </ul>
+  ```
+
+  Notice that the behavior of the application would have changed simply by
+  running the formatter. It is for this reason that `SurfaceFormatter`
+  always retains precisely the same whitespace in attribute strings,
+  including both space and newline characters.
 
   ### Wrapping attributes on separate lines
 
-  In the **Interpolation (`{{ }}` brackets)** section we noted that attributes
+  In the **Interpolation (`{ }` brackets)** section we noted that attributes
   will each be put on their own line if there is more than one attribute and at
   least one contains a newline after being formatted by the Elixir code
   formatter.
