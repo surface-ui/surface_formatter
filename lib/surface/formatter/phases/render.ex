@@ -193,7 +193,12 @@ defmodule Surface.Formatter.Phases.Render do
     max_line_length = opts[:line_length] || @default_line_length
     self_closing = Keyword.get(opts, :self_closing, false)
     indentation = String.duplicate(@tab, opts[:indent])
-    rendered_attributes = render_attributes(attributes)
+
+    rendered_attributes =
+      Enum.map(
+        attributes,
+        &render_attribute(&1, Keyword.put(opts, :attributes, attributes))
+      )
 
     attribute_strings =
       Enum.map(rendered_attributes, fn
@@ -283,10 +288,6 @@ defmodule Surface.Formatter.Phases.Render do
         " /"
       end}>"
     end
-  end
-
-  defp render_attributes(attributes) when is_list(attributes) do
-    Enum.map(attributes, &render_attribute(&1, attributes: attributes))
   end
 
   @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute()]}
@@ -429,7 +430,13 @@ defmodule Surface.Formatter.Phases.Render do
         |> quoted_strings_with_newlines()
         |> Enum.uniq()
         |> Enum.reduce(formatted, fn string_with_newlines, formatted ->
-          dedented = String.replace(string_with_newlines, "\n  ", "\n")
+          dedented =
+            String.replace(
+              string_with_newlines,
+              "\n#{String.duplicate(@tab, opts[:indent] + 1)}",
+              "\n"
+            )
+
           String.replace(formatted, string_with_newlines, dedented)
         end)
       else

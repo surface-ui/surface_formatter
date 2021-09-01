@@ -1516,27 +1516,31 @@ defmodule Surface.FormatterTest do
 
   test "Multi-line strings in lists in attributes aren't indented every time the formatter is ran" do
     assert_formatter_doesnt_change(~S"""
-    <First
-      class={
-        "w-full h-12 max-w-full px-4 bg-black-100 hover:bg-black-120 text-base leading-normal
-         text-color-bulma-100 box-border border border-solid border-yellow-100 rounded transition
-         ease-in placeholder-cyan-100 placeholder-opacity-100 disabled:opacity-50
-         disabled:cursor-not-allowed focus:border-red-100 focus:outline-none
-         no-scrollbar invalid:shadow-none invalid:border-green-100 #{@class}",
-        "pl-11": @left_icon,
-        "pr-11": @right_icon,
-        "border-green-100": @error
-      }
-      field={@field}
-      opts={[
-        placeholder: @placeholder,
-        disabled: @disabled,
-        required: @required
-      ]}
-      value={@value}
-      focus={@on_focus}
-      blur={@on_blur}
-    />
+    <Wrapper>
+      <Wrapper>
+        <First
+          class={
+            "w-full h-12 max-w-full px-4 bg-black-100 hover:bg-black-120 text-base leading-normal
+             text-color-bulma-100 box-border border border-solid border-yellow-100 rounded transition
+             ease-in placeholder-cyan-100 placeholder-opacity-100 disabled:opacity-50
+             disabled:cursor-not-allowed focus:border-red-100 focus:outline-none
+             no-scrollbar invalid:shadow-none invalid:border-green-100 #{@class}",
+            "pl-11": @left_icon,
+            "pr-11": @right_icon,
+            "border-green-100": @error
+          }
+          field={@field}
+          opts={[
+            placeholder: @placeholder,
+            disabled: @disabled,
+            required: @required
+          ]}
+          value={@value}
+          focus={@on_focus}
+          blur={@on_blur}
+        />
+      </Wrapper>
+    </Wrapper>
     """)
 
     assert_formatter_outputs(
