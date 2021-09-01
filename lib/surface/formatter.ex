@@ -7,7 +7,7 @@ defmodule Surface.Formatter do
   Options that can be passed to `Surface.Formatter.format_string!/2`.
 
     - `:line_length` - Maximum line length before wrapping opening tags
-    - `:indent` - Starting indentation depth depending on the context of the ~H sigil
+    - `:indent` - Starting indentation depth depending on the context of the ~F sigil
   """
   @type option :: {:line_length, integer} | {:indent, integer}
 
@@ -59,7 +59,7 @@ defmodule Surface.Formatter do
   @type formatter_node :: surface_node | whitespace
 
   @doc """
-  Formats the given Surface code string. (Typically the contents of an `~H`
+  Formats the given Surface code string. (Typically the contents of an `~F`
   sigil or `.sface` file.)
 
   In short:
@@ -72,21 +72,21 @@ defmodule Surface.Formatter do
 
   Below the **Options** section is a non-exhaustive list of behaviors of the formatter.
 
-  ## Options
+  # Options
 
     * `:line_length` - the line length to aim for when formatting
     the document. Defaults to 98. As with the Elixir formatter,
     this value is used as reference but is not always enforced
     depending on the context.
 
-  ## Indentation
+  # Indentation
 
   The formatter ensures that children are indented one tab (two spaces) in from
   their parent.
 
-  ## Whitespace
+  # Whitespace
 
-  ### Whitespace that exists
+  ## Whitespace that exists
 
   As in regular HTML, any string of continuous whitespace is considered
   equivalent to any other string of continuous whitespace. There are four
@@ -100,7 +100,7 @@ defmodule Surface.Formatter do
   The contents of those tags are considered whitespace-sensitive, and developers
   should sanity check after running the formatter.
 
-  ### Whitespace that doesn't exist (Lack of whitespace)
+  ## Whitespace that doesn't exist (Lack of whitespace)
 
   As is sometimes the case in HTML, _lack_ of whitespace is considered
   significant. Instead of attempting to determine which contexts matter, the
@@ -146,7 +146,7 @@ defmodule Surface.Formatter do
   because of the lack of whitespace in between the opening and closing `<p>` tags
   and their child content.
 
-  ### Splitting children onto separate lines
+  ## Splitting children onto separate lines
 
   In certain scenarios, the formatter will move nodes to their own line:
 
@@ -167,7 +167,7 @@ defmodule Surface.Formatter do
   had to be defined in the parent <b>LiveView</b>.
   ```
 
-  ### Newline characters
+  ## Newline characters
 
   The formatter will not add extra newlines unprompted beyond moving nodes onto
   their own line.  However, if the input code has extra newlines, the formatter
@@ -194,12 +194,13 @@ defmodule Surface.Formatter do
   <p>Goodbye</p>
   ```
 
-  ## Attributes
+  # HTML attributes and component props
 
-  HTML attributes such as `class` in `<p class="container">` are formatted to
-  make use of Surface features.
+  HTML attributes such as `class` in `<p class="container">` and component
+  props such as `name` in `<Person name="Samantha">` are formatted to make use
+  of Surface features.
 
-  ### Inline literals
+  ## Inline literals
 
   String literals are placed after the `=` without any interpolation brackets (`{ }`). This means that
 
@@ -213,9 +214,9 @@ defmodule Surface.Formatter do
   <Component foo="hello" />
   ```
 
-  One exception is that `true` boolean literals are formatted using the Surface
-  shorthand whereby you can simply write the name of the attribute and it is
-  passed in as `true`.  For example,
+  Also, `true` boolean literals are formatted using the Surface shorthand
+  whereby you can simply write the name of the attribute and it is passed in as
+  `true`. For example,
 
   ```html
   <Component secure={true} />
@@ -233,7 +234,7 @@ defmodule Surface.Formatter do
   <Component secure />
   ```
 
-  ### Interpolation (`{ }` brackets)
+  ## Interpolation (`{ }` brackets)
 
   Attributes that interpolate Elixir code with `{ }` brackets are ran through
   the Elixir code formatter.
@@ -268,17 +269,22 @@ defmodule Surface.Formatter do
   />
   ```
 
-  ### Whitespace in string attributes
+  ## Whitespace in string attributes
 
-  It's critical that a code formatter _never_ change the semantics of the code
+  ### Code semantics must be maintained
+
+  It's critical that a code formatter never change the semantics of the code
   it modifies.  In other words, the behavior of a program should never change
-  due to a code formatter.  The **Whitespace** section above outlines how
-  `SurfaceFormatter` preserves code semantics by refusing to modify contents of
-  `<script>`, `<code>` and `<pre>` tags as well as macro components. And for
-  the same reason, the formatter does not introduce whitespace between HTML
-  tags when there is none.
+  due to a code formatter.
 
-  This principle is relevant to string attributes, such as:
+  The **Whitespace** section above outlines how `SurfaceFormatter` preserves
+  code semantics by refusing to modify contents of `<script>`, `<code>` and
+  `<pre>` tags as well as macro components. And for the same reason, the
+  formatter does not introduce whitespace between HTML tags when there is none.
+
+  ### Code semantics in string attributes
+
+  This principle is also relevant to string attributes, such as:
 
   ```html
   <MyComponent string_prop="  string  with  whitespace  " />
@@ -326,7 +332,7 @@ defmodule Surface.Formatter do
   always retains precisely the same whitespace in attribute strings,
   including both space and newline characters.
 
-  ### Wrapping attributes on separate lines
+  ## Wrapping attributes on separate lines
 
   In the **Interpolation (`{ }` brackets)** section we noted that attributes
   will each be put on their own line if there is more than one attribute and at
@@ -360,6 +366,8 @@ defmodule Surface.Formatter do
     # ...
   ]
   ```
+
+  # Developer Responsibility
 
   As with all changes (for both `mix format` and `mix surface.format`) it's
   recommended that developers don't blindly run the formatter on an entire
