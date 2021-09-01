@@ -152,118 +152,15 @@ defmodule Surface.Formatter.Phases.Render do
     render_node({":#{slot_name}", attributes, children, meta}, opts)
   end
 
+  def render_node({tag, attributes, [], _meta}, opts) do
+    render_opening_tag(
+      tag,
+      attributes,
+      Keyword.put(opts, :self_closing, true)
+    )
+  end
+
   def render_node({tag, attributes, children, _meta}, opts) do
-    self_closing = Enum.empty?(children)
-    indentation = String.duplicate(@tab, opts[:indent])
-
-    rendered_attributes =
-      Enum.map(
-        attributes,
-        &render_attribute(&1, attribute: attributes)
-      )
-
-    attributes_on_same_line =
-      case rendered_attributes do
-        [] ->
-          ""
-
-        rendered_attributes ->
-          # Prefix attributes string with a space (for after tag name)
-          joined_attributes =
-            rendered_attributes
-            |> Enum.map(fn
-              {:do_not_indent_newlines, attr} -> attr
-              attr -> attr
-            end)
-            |> Enum.join(" ")
-
-          " " <> joined_attributes
-      end
-
-    opening_on_one_line =
-      "<" <>
-        tag <>
-        attributes_on_same_line <>
-        "#{if self_closing do
-          " /"
-        end}>"
-
-    line_length = opts[:line_length] || @default_line_length
-    attributes_contain_newline = String.contains?(attributes_on_same_line, "\n")
-    line_length_exceeded = String.length(opening_on_one_line) > line_length
-
-    put_attributes_on_separate_lines =
-      length(attributes) > 1 and (attributes_contain_newline or line_length_exceeded)
-
-    # Maybe split opening tag onto multiple lines depending on line length
-    opening =
-      if put_attributes_on_separate_lines do
-        attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
-
-        indented_attributes =
-          Enum.map(
-            rendered_attributes,
-            fn
-              {:do_not_indent_newlines, attr} ->
-                "#{attr_indentation}#{attr}"
-
-              attr ->
-                # This is pretty hacky, but it's an attempt to get things like
-                #   class={{
-                #     "foo",
-                #     @bar,
-                #     baz: true
-                #   }}
-                # to look right
-                with_newlines_indented = String.replace(attr, "\n", "\n#{attr_indentation}")
-
-                "#{attr_indentation}#{with_newlines_indented}"
-            end
-          )
-
-        [
-          "<#{tag}",
-          indented_attributes,
-          "#{indentation}#{if self_closing do
-            "/"
-          end}>"
-        ]
-        |> List.flatten()
-        |> Enum.join("\n")
-      else
-        # We're not splitting attributes onto their own newlines,
-        # but it's possible that an attribute has a newline in it
-        # (for interpolated maps/lists) so ensure those lines are indented.
-        # We're rebuilding the tag from scratch so we can respect
-        # :do_not_indent_newlines attributes.
-        attr_indentation = String.duplicate(@tab, opts[:indent])
-
-        attributes =
-          case rendered_attributes do
-            [] ->
-              ""
-
-            _ ->
-              joined_attributes =
-                rendered_attributes
-                |> Enum.map(fn
-                  {:do_not_indent_newlines, attr} -> attr
-                  attr -> String.replace(attr, "\n", "\n#{attr_indentation}")
-                end)
-                |> Enum.join(" ")
-
-              # Prefix attributes string with a space (for after tag name)
-              " " <> joined_attributes
-          end
-
-        "<" <>
-          tag <>
-          attributes <>
-          "#{if self_closing and not is_void_element?(tag) do
-            " /"
-          end}>"
-      end
-
     rendered_children =
       if Formatter.render_contents_verbatim?(tag) do
         Enum.map(children, fn
@@ -281,11 +178,103 @@ defmodule Surface.Formatter.Phases.Render do
         Enum.map(children, &render_node(&1, next_opts))
       end
 
-    if self_closing do
-      "#{opening}"
+    "#{render_opening_tag(tag, attributes, opts)}#{rendered_children}</#{tag}>"
+  end
+
+  defp render_opening_tag(tag, [] = _attributes, opts) do
+    if opts[:self_closing] && not is_void_element?(tag) do
+      "<#{tag} />"
     else
-      "#{opening}#{rendered_children}</#{tag}>"
+      "<#{tag}>"
     end
+  end
+
+  defp render_opening_tag(tag, attributes, opts) do
+    max_line_length = opts[:line_length] || @default_line_length
+    self_closing = Keyword.get(opts, :self_closing, false)
+    indentation = String.duplicate(@tab, opts[:indent])
+    rendered_attributes = render_attributes(attributes)
+    attribute_strings = Enum.map(rendered_attributes, fn
+      {:do_not_indent_newlines, attr} -> attr
+      attr -> attr
+    end)
+
+    # calculate length of the entire opening tag if fit on a single line
+    total_attr_lengths =
+      attribute_strings
+      |> Enum.map(&String.length/1)
+      |> Enum.sum()
+
+    # consider tag name, space before each attribute, < and > (and ` /` for self-closing tags)
+    length_on_same_line = total_attr_lengths + String.length(tag) + length(attributes) + (if self_closing do 4 else 2 end)
+
+    put_attributes_on_separate_lines = if length(attributes) > 1 do
+      (length_on_same_line) > max_line_length or Enum.any?(attribute_strings, & String.contains?(&1, "\n"))
+    else
+      false
+    end
+
+    if put_attributes_on_separate_lines do
+      attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
+
+      indented_attributes =
+        Enum.map(rendered_attributes, fn
+          {:do_not_indent_newlines, attr} ->
+            "#{attr_indentation}#{attr}"
+
+          attr ->
+            # This is pretty hacky, but it's an attempt to get things like
+            #   class={
+            #     "foo",
+            #     @bar,
+            #     baz: true
+            #   }
+            # to look right
+            with_newlines_indented = String.replace(attr, "\n", "\n#{attr_indentation}")
+            "#{attr_indentation}#{with_newlines_indented}"
+        end)
+
+      [
+        "<#{tag}",
+        indented_attributes,
+        "#{indentation}#{if self_closing do
+          "/"
+        end}>"
+      ]
+      |> List.flatten()
+      |> Enum.join("\n")
+    else
+      # We're not splitting attributes onto their own newlines,
+      # but it's possible that an attribute has a newline in it
+      # (for interpolated maps/lists) so ensure those lines are indented.
+      # We're rebuilding the tag from scratch so we can respect
+      # :do_not_indent_newlines attributes.
+      attr_indentation = String.duplicate(@tab, opts[:indent])
+
+      attributes =
+        case rendered_attributes do
+          [] ->
+            ""
+
+          _ ->
+            joined_attributes =
+              rendered_attributes
+              |> Enum.map(fn
+                {:do_not_indent_newlines, attr} -> attr
+                attr -> String.replace(attr, "\n", "\n#{attr_indentation}")
+              end)
+              |> Enum.join(" ")
+
+            # Prefix attributes string with a space (for after tag name)
+            " " <> joined_attributes
+        end
+
+      "<#{tag}#{attributes}#{if self_closing and not is_void_element?(tag) do " /" end}>"
+    end
+  end
+
+  defp render_attributes(attributes) when is_list(attributes) do
+    Enum.map(attributes, &render_attribute(&1, attribute: attributes))
   end
 
   @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute]}
@@ -409,7 +398,6 @@ defmodule Surface.Formatter.Phases.Render do
   end
 
   @spec format_attribute_expression(String.t, [render_attribute_option]) :: String.t
-  defp format_attribute_expression(expression, opts \\ [])
   defp format_attribute_expression(expression, opts) when is_binary(expression) do
     if has_invisible_brackets?(expression) do
       # handle keyword lists, which will be stripped of the outer brackets per surface syntax sugar

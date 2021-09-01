@@ -90,7 +90,7 @@ defmodule Surface.FormatterTest do
       """)
     end
 
-    test "attributes wrap at 98 characters by default" do
+    test "attributes wrap after 98 characters by default" do
       assert_formatter_doesnt_change("""
       <Component foo="..........." bar="..............." baz="............" qux="..................." />
       """)
@@ -1516,7 +1516,7 @@ defmodule Surface.FormatterTest do
 
   test "Multi-line strings in lists in attributes aren't indented every time the formatter is ran" do
     assert_formatter_doesnt_change(~S"""
-    <TextInput
+    <First
       class={
         "w-full h-12 max-w-full px-4 bg-black-100 hover:bg-black-120 text-base leading-normal
          text-color-bulma-100 box-border border border-solid border-yellow-100 rounded transition
@@ -1541,7 +1541,7 @@ defmodule Surface.FormatterTest do
 
     assert_formatter_outputs(
       ~S"""
-      <TextInput
+      <Second
         class={
           "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
            text-color-y-100 box-border border border-solid border-k-100 rounded transition
@@ -1554,7 +1554,7 @@ defmodule Surface.FormatterTest do
       />
       """,
       ~S"""
-      <TextInput class={
+      <Second class={
         "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
            text-color-y-100 box-border border border-solid border-k-100 rounded transition
            ease-in placeholder-hhh-100 placeholder-opacity-100 disabled:opacity-50
@@ -1567,7 +1567,7 @@ defmodule Surface.FormatterTest do
     )
 
     assert_formatter_doesnt_change(~S"""
-    <TextInput
+    <Third
       class={
         "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
          text-color-y-100 box-border border border-solid border-k-100 rounded transition
@@ -1582,7 +1582,7 @@ defmodule Surface.FormatterTest do
     """)
 
     assert_formatter_doesnt_change(~S"""
-    <TextInput class={
+    <Fourth class={
       "w-full h-12 max-w-full px-4 bg-x-100 hover:bg-x-120 text-base leading-normal
        text-color-y-100 box-border border border-solid border-k-100 rounded transition
        ease-in placeholder-hhh-100 placeholder-opacity-100 disabled:opacity-50
