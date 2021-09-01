@@ -194,10 +194,12 @@ defmodule Surface.Formatter.Phases.Render do
     self_closing = Keyword.get(opts, :self_closing, false)
     indentation = String.duplicate(@tab, opts[:indent])
     rendered_attributes = render_attributes(attributes)
-    attribute_strings = Enum.map(rendered_attributes, fn
-      {:do_not_indent_newlines, attr} -> attr
-      attr -> attr
-    end)
+
+    attribute_strings =
+      Enum.map(rendered_attributes, fn
+        {:do_not_indent_newlines, attr} -> attr
+        attr -> attr
+      end)
 
     # calculate length of the entire opening tag if fit on a single line
     total_attr_lengths =
@@ -206,13 +208,21 @@ defmodule Surface.Formatter.Phases.Render do
       |> Enum.sum()
 
     # consider tag name, space before each attribute, < and > (and ` /` for self-closing tags)
-    length_on_same_line = total_attr_lengths + String.length(tag) + length(attributes) + (if self_closing do 4 else 2 end)
+    length_on_same_line =
+      total_attr_lengths + String.length(tag) + length(attributes) +
+        if self_closing do
+          4
+        else
+          2
+        end
 
-    put_attributes_on_separate_lines = if length(attributes) > 1 do
-      (length_on_same_line) > max_line_length or Enum.any?(attribute_strings, & String.contains?(&1, "\n"))
-    else
-      false
-    end
+    put_attributes_on_separate_lines =
+      if length(attributes) > 1 do
+        length_on_same_line > max_line_length or
+          Enum.any?(attribute_strings, &String.contains?(&1, "\n"))
+      else
+        false
+      end
 
     if put_attributes_on_separate_lines do
       attr_indentation = String.duplicate(@tab, opts[:indent] + 1)
@@ -269,7 +279,9 @@ defmodule Surface.Formatter.Phases.Render do
             " " <> joined_attributes
         end
 
-      "<#{tag}#{attributes}#{if self_closing and not is_void_element?(tag) do " /" end}>"
+      "<#{tag}#{attributes}#{if self_closing and not is_void_element?(tag) do
+        " /"
+      end}>"
     end
   end
 
@@ -277,7 +289,7 @@ defmodule Surface.Formatter.Phases.Render do
     Enum.map(attributes, &render_attribute(&1, attributes: attributes))
   end
 
-  @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute]}
+  @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute()]}
 
   @spec render_attribute({String.t(), term, map}, [render_attribute_option]) ::
           String.t() | {:do_not_indent_newlines, String.t()}
@@ -322,7 +334,8 @@ defmodule Surface.Formatter.Phases.Render do
     "{=@#{name}}"
   end
 
-  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}, opts) when name in [":attrs", ":props"] do
+  defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}, opts)
+       when name in [":attrs", ":props"] do
     "{...#{format_attribute_expression(expression, opts)}}"
   end
 
@@ -397,7 +410,7 @@ defmodule Surface.Formatter.Phases.Render do
       Code.string_to_quoted!(expression)
   end
 
-  @spec format_attribute_expression(String.t, [render_attribute_option]) :: String.t
+  @spec format_attribute_expression(String.t(), [render_attribute_option]) :: String.t()
   defp format_attribute_expression(expression, opts) when is_binary(expression) do
     if has_invisible_brackets?(expression) do
       # handle keyword lists, which will be stripped of the outer brackets per surface syntax sugar
@@ -429,7 +442,7 @@ defmodule Surface.Formatter.Phases.Render do
     end
   end
 
-  @spec has_invisible_brackets?(Macro.t | String.t) :: boolean
+  @spec has_invisible_brackets?(Macro.t() | String.t()) :: boolean
   defp has_invisible_brackets?(expression) when is_binary(expression) do
     expression
     |> quoted_wrapped_expression()
