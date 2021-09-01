@@ -274,7 +274,7 @@ defmodule Surface.Formatter.Phases.Render do
   end
 
   defp render_attributes(attributes) when is_list(attributes) do
-    Enum.map(attributes, &render_attribute(&1, attribute: attributes))
+    Enum.map(attributes, &render_attribute(&1, attributes: attributes))
   end
 
   @type render_attribute_option :: {:attributes, [Surface.Formatter.attribute]}

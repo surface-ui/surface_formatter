@@ -4,7 +4,7 @@ defmodule Surface.FormatterTest do
   alias Surface.Formatter
 
   def assert_formatter_outputs(input_code, expected_formatted_result, opts \\ []) do
-    assert Formatter.format_string!(input_code, opts) == expected_formatted_result
+    assert expected_formatted_result == Formatter.format_string!(input_code, opts)
 
     # demonstrate that the output can be parsed by the Surface parser
     Surface.Compiler.Parser.parse!(expected_formatted_result)
