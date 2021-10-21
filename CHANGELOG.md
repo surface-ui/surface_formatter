@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0 (2021-10-21)
+
+  * Support tagged expression attributes referencing variables (#47)
+  * Require Surface `~> 0.5` instead of `~> 0.5.0` to expand compatibility to `0.6`
+
 ## v0.5.4 (2021-08-31)
 
   * Stop endlessly indenting attribute strings with interpolation whenever node is indented (#43)
