@@ -331,8 +331,8 @@ defmodule Surface.Formatter.Phases.Render do
   defp render_attribute({name, value, _meta}, _opts) when is_integer(value),
     do: "#{name}={#{Code.format_string!("#{value}")}}"
 
-  defp render_attribute({name, {:attribute_expr, _, %{tagged_expr?: true}}, _}, _) do
-    "{=@#{name}}"
+  defp render_attribute({_name, {:attribute_expr, expression, %{tagged_expr?: true}}, _}, _opts) do
+    "{=#{expression}}"
   end
 
   defp render_attribute({name, {:attribute_expr, expression, _expr_meta}, _meta}, opts)

@@ -902,6 +902,15 @@ defmodule Surface.FormatterTest do
         """
       )
 
+      assert_formatter_outputs(
+        """
+        <Foo {= bar} />
+        """,
+        """
+        <Foo {=bar} />
+        """
+      )
+
       # demonstrate that the formatter is unopinionated about short or longhand
       # in this scenario
       assert_formatter_outputs(
