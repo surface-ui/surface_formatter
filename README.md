@@ -8,9 +8,9 @@ A code formatter for [https://hex.pm/packages/surface](https://hex.pm/packages/s
 
 The complete documentation for SurfaceFormatter is located [here](https://hexdocs.pm/surface_formatter/).
 
-## Installation and Usage
+## Installation
 
-First, add `:surface_formatter` as a dependency in `mix.exs`:
+Add `:surface_formatter` as a dependency in `mix.exs`:
 
 ```elixir
 defp deps do
@@ -20,15 +20,11 @@ defp deps do
 end
 ```
 
-### With Elixir >= 1.13
+## Formatter Plugin Usage (Elixir 1.13 and later)
 
-With Elixir 1.13, format both Elixir and Surface code with:
+### Configuration
 
-```bash
-$ mix format
-```
-
-First, modify the following in `.formatter.exs`:
+Modify the following in `.formatter.exs`:
 
 - `inputs`  - add patterns for all Surface files
 - `plugins` - add `Surface.Formatter.Plugin`
@@ -45,15 +41,19 @@ First, modify the following in `.formatter.exs`:
 
 For documentation of other `.formatter.exs` options, see `Surface.Formatter.Plugin`.
 
-### With Elixir 1.12 or Earlier
-
-With Elixir 1.12, format Surface code with:
+### Usage
 
 ```bash
-$ mix surface.format
+$ mix format
 ```
 
-First, add `surface_inputs` to `.formatter.exs` with patterns for all Surface files:
+(Formats both Elixir and Surface code.)
+
+## Mix Task Usage (Elixir 1.12 and earlier)
+
+### Configuration
+
+Add `surface_inputs` to `.formatter.exs` with patterns for all Surface files:
 
 ```elixir
 # .formatter.exs
@@ -71,6 +71,12 @@ surface.format` will fall back to `:inputs`.) But be warned that including
 earlier.
 
 For documentation of other `.formatter.exs` options, see `mix surface.format`.
+
+### Usage
+
+```bash
+$ mix surface.format
+```
 
 ## Formatting rules
 

@@ -4,8 +4,8 @@ defmodule Surface.Formatter.Plugin do
   plugin](https://hexdocs.pm/mix/1.13.0-rc.1/Mix.Tasks.Format.html#module-plugins)
   for Surface code.
 
-  Elixir 1.13 introduced formatter plugins, allowing SurfaceFormatter to run
-  during `mix format` instead of requiring developers to run `mix
+  Elixir 1.13 introduced formatter plugins, allowing the Surface formatter to
+  run during `mix format` instead of requiring developers to run `mix
   surface.format` separately.
 
   To format Surface code using Elixir 1.12 or earlier, use `mix
