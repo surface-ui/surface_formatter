@@ -54,4 +54,4 @@ jobs:
       - run: mix test
         if: matrix.run_plugin_tests
       - run: mix test --exclude plugin
-        if: !matrix.run_plugin_tests
+        if: ${{ !matrix.run_plugin_tests }}
