@@ -1,5 +1,6 @@
 defmodule Surface.Formatter.PluginTest do
   use ExUnit.Case
+  @moduletag :plugin
 
   # Write a unique file and .formatter.exs for a test, run `mix format` on the
   # file, and assert whether the input matches the expected output
