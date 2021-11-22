@@ -4,6 +4,8 @@ defmodule Mix.Tasks.Surface.Format do
   @moduledoc """
   Formats Surface `~F` sigils and `.sface` files in the given files and patterns.
 
+  Use `Surface.Formatter.Plugin` instead if using Elixir 1.13 or greater.
+
   ```bash
   $ mix surface.format "lib/**/*.{ex,exs}" "test/**/*.{ex,exs}"
   $ cat path/to/file.ex | mix surface.format -

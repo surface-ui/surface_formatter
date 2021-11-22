@@ -4,7 +4,7 @@
 [![hex.pm](https://img.shields.io/hexpm/v/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
 [![hex.pm](https://img.shields.io/hexpm/l/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
 
-A code formatter for https://hex.pm/packages/surface
+A code formatter for [https://hex.pm/packages/surface](https://hex.pm/packages/surface).
 
 The complete documentation for SurfaceFormatter is located [here](https://hexdocs.pm/surface_formatter/).
 
@@ -20,13 +20,43 @@ defp deps do
 end
 ```
 
+For Elixir 1.13 and later, modify `.formatter.exs` by adding
+`Surface.Formatter.Plugin` to `:plugins` and including all Surface files in
+`:inputs`:
+
+```elixir
+# .formatter.exs
+[
+  ...,
+  plugins: [Surface.Formatter.Plugin],
+
+  # add patterns matching all .sface files and all .ex files with ~F sigils
+  inputs: ["lib/**/*.{ex,sface}", ...]
+]
+```
+
+For documentation of other `.formatter.exs` options, see:
+
+- `Surface.Formatter.Plugin` if using Elixir 1.13 or later
+- `mix surface.format` if using Elixir 1.12 or earlier
+
 ## Usage
+
+### Elixir 1.13 and later
+
+```bash
+$ mix format
+```
+
+(Formats both Elixir and Surface code.)
+
+### Elixir 1.12 and earlier
 
 ```bash
 $ mix surface.format
 ```
 
-See `mix surface.format` for documentation of flags and configuration options.
+(Only formats Surface code.)
 
 ## Formatting rules
 
