@@ -1,62 +1,64 @@
-defmodule Surface.Formatter.Plugin do
-  @moduledoc """
-  An [Elixir formatter
-  plugin](https://hexdocs.pm/mix/1.13.0-rc.1/Mix.Tasks.Format.html#module-plugins)
-  for Surface code.
+if Code.ensure_loaded?(Mix.Tasks.Format) do
+  defmodule Surface.Formatter.Plugin do
+    @moduledoc """
+    An [Elixir formatter
+    plugin](https://hexdocs.pm/mix/1.13.0-rc.1/Mix.Tasks.Format.html#module-plugins)
+    for Surface code.
 
-  Elixir 1.13 introduced formatter plugins, allowing SurfaceFormatter to run
-  during `mix format` instead of requiring developers to run `mix
-  surface.format` separately.
+    Elixir 1.13 introduced formatter plugins, allowing SurfaceFormatter to run
+    during `mix format` instead of requiring developers to run `mix
+    surface.format` separately.
 
-  To format Surface code using Elixir 1.12 or earlier, use `mix
-  surface.format`.
+    To format Surface code using Elixir 1.12 or earlier, use `mix
+    surface.format`.
 
-  ### `.formatter.exs` setup
+    ### `.formatter.exs` setup
 
-  Add to `:plugins` in `.formatter.exs` in order to format `~F` sigils and
-  `.sface` files when running `mix format`.
+    Add to `:plugins` in `.formatter.exs` in order to format `~F` sigils and
+    `.sface` files when running `mix format`.
 
-  Only works on files matching patterns in `:inputs`, so add patterns for
-  all Surface files to ensure they're formatted.
+    Only works on files matching patterns in `:inputs`, so add patterns for
+    all Surface files to ensure they're formatted.
 
-      # in .formatter.exs
-      [
-        ...,
-        plugins: [Surface.Formatter.Plugin]
+        # in .formatter.exs
+        [
+          ...,
+          plugins: [Surface.Formatter.Plugin]
 
-        # add patterns matching all .sface files and all .ex files with ~F sigils
-        inputs: ["*.{ex,exs}", "{config,lib,test}/**/*.{ex,exs,sface}"],
+          # add patterns matching all .sface files and all .ex files with ~F sigils
+          inputs: ["*.{ex,exs}", "{config,lib,test}/**/*.{ex,exs,sface}"],
 
-        # THE FOLLOWING ARE OPTIONAL:
+          # THE FOLLOWING ARE OPTIONAL:
 
-        # set desired line length for both Elixir's code formatter and this one
-        # (only affects opening tags in Surface)
-        line_length: 80,
+          # set desired line length for both Elixir's code formatter and this one
+          # (only affects opening tags in Surface)
+          line_length: 80,
 
-        # or, set line length only for Surface code (overrides `line_length`)
-        surface_line_length: 84
-      ]
+          # or, set line length only for Surface code (overrides `line_length`)
+          surface_line_length: 84
+        ]
 
-  ### Options
+    ### Options
 
-  In `.formatter.exs`, the following options can be provided:
+    In `.formatter.exs`, the following options can be provided:
 
-  - `:line_length` - Maximum line length of an opening tag before
-    SurfaceFormatter attempts to wrap it onto multiple lines. This option is
-    used by `Code.format_string!/2` and `mix format` and defaults to 98.
-  - `:surface_line_length` - Overrides `:line_length`; useful for setting
-    separate desired line length for Surface code and non-Surface Elixir code.
+    - `:line_length` - Maximum line length of an opening tag before
+      SurfaceFormatter attempts to wrap it onto multiple lines. This option is
+      used by `Code.format_string!/2` and `mix format` and defaults to 98.
+    - `:surface_line_length` - Overrides `:line_length`; useful for setting
+      separate desired line length for Surface code and non-Surface Elixir code.
 
-  """
+    """
 
-  @behaviour Mix.Tasks.Format
+    @behaviour Mix.Tasks.Format
 
-  def features(_opts) do
-    [sigils: [:F], extensions: [".sface"]]
-  end
+    def features(_opts) do
+      [sigils: [:F], extensions: [".sface"]]
+    end
 
-  def format(contents, opts) do
-    opts = Keyword.put(opts, :line_length, opts[:surface_line_length] || opts[:line_length])
-    Surface.Formatter.format_string!(contents, opts)
+    def format(contents, opts) do
+      opts = Keyword.put(opts, :line_length, opts[:surface_line_length] || opts[:line_length])
+      Surface.Formatter.format_string!(contents, opts)
+    end
   end
 end
