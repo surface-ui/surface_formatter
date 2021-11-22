@@ -42,7 +42,7 @@ defmodule Surface.Formatter.PluginTest do
       """
       defmodule Foo do
         def bar do
-          ~F"""
+          ~F\"""
             <div>
               </div>
           \"\"\"
@@ -52,7 +52,7 @@ defmodule Surface.Formatter.PluginTest do
       """
       defmodule Foo do
         def bar do
-          ~F"""
+          ~F\"""
           <div>
           </div>
           \"\"\"
@@ -68,7 +68,7 @@ defmodule Surface.Formatter.PluginTest do
       """
       defmodule Foo do
         def render(assigns) do
-          ~F"""
+          ~F\"""
           <Component a="12345678901234567890" b="12345678901234567890" c="12345678901234567890" d="12345678901234567890" e="12345678901234567890" />
           \"\"\"
         end
@@ -77,7 +77,7 @@ defmodule Surface.Formatter.PluginTest do
       """
       defmodule Foo do
         def render(assigns) do
-          ~F"""
+          ~F\"""
           <Component
             a="12345678901234567890"
             b="12345678901234567890"
