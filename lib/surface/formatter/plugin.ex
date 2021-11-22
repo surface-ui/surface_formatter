@@ -1,4 +1,4 @@
-if Code.ensure_loaded?(Mix.Tasks.Format) do
+if function_exported?(Mix.Tasks.Format, :behaviour_info, 1) do
   defmodule Surface.Formatter.Plugin do
     @moduledoc """
     An [Elixir formatter
