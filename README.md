@@ -20,18 +20,25 @@ defp deps do
 end
 ```
 
-For Elixir 1.13 and later, modify `.formatter.exs` by adding
-`Surface.Formatter.Plugin` to `:plugins` and including all Surface files in
-`:inputs`:
+Modify `.formatter.exs` by adding patterns for all Surface files in `:inputs`:
 
 ```elixir
 # .formatter.exs
 [
   ...,
-  plugins: [Surface.Formatter.Plugin],
-
-  # add patterns matching all .sface files and all .ex files with ~F sigils
+  # match all .sface files and all .ex files with ~F sigils
   inputs: ["lib/**/*.{ex,sface}", ...]
+]
+```
+
+For **Elixir 1.13 and greater**, add `Surface.Formatter.Plugin` to `:plugins`
+in `.formatter.exs`:
+
+```elixir
+# .formatter.exs
+[
+  ...,
+  plugins: [Surface.Formatter.Plugin]
 ]
 ```
 
