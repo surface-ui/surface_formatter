@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.0 (2021-11-22)
+
+  * Add `Surface.Formatter.Plugin` for Elixir 1.13 Formatter Plugin support.
+
 ## v0.6.0 (2021-10-21)
 
   * Support tagged expression attributes referencing variables (#47)
