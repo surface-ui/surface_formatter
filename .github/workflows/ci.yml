@@ -16,13 +16,15 @@ jobs:
         include:
           - elixir: 1.11.1
             otp: 21.3.8.17
-            warnings-as-errors: true
           - elixir: 1.11.4
             otp: 23.2
-            warnings-as-errors: true
-          - elixir: 1.12.0-rc.0
-            otp: 24.0-rc3
+          - elixir: 1.12.3
+            otp: 24.1
+          - elixir: 1.13.0-rc.1
+            otp: 24.1
             check_formatted: true
+            run_plugin_tests: true
+            warnings_as_errors: true
 
     env:
       MIX_ENV: test
@@ -50,3 +52,6 @@ jobs:
       - run: mix compile --warnings-as-errors
         if: matrix.warnings_as_errors
       - run: mix test
+        if: matrix.run_plugin_tests
+      - run: mix test --exclude plugin
+        if: ${{ !matrix.run_plugin_tests }}

@@ -4,13 +4,13 @@
 [![hex.pm](https://img.shields.io/hexpm/v/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
 [![hex.pm](https://img.shields.io/hexpm/l/surface_formatter.svg)](https://hex.pm/packages/surface_formatter)
 
-A code formatter for https://hex.pm/packages/surface
+A code formatter for [https://hex.pm/packages/surface](https://hex.pm/packages/surface).
 
 The complete documentation for SurfaceFormatter is located [here](https://hexdocs.pm/surface_formatter/).
 
 ## Installation
 
-Add as a dependency in `mix.exs`:
+Add `:surface_formatter` as a dependency in `mix.exs`:
 
 ```elixir
 defp deps do
@@ -20,13 +20,63 @@ defp deps do
 end
 ```
 
-## Usage
+## Formatter Plugin Usage (Elixir 1.13 and later)
+
+### Configuration
+
+Modify the following in `.formatter.exs`:
+
+- `inputs`  - add patterns for all Surface files
+- `plugins` - add `Surface.Formatter.Plugin`
+
+```elixir
+# .formatter.exs
+[
+  ...,
+  # match all .sface files and all .ex files with ~F sigils
+  inputs: ["lib/**/*.{ex,sface}", ...],
+  plugins: [Surface.Formatter.Plugin]
+]
+```
+
+For documentation of other `.formatter.exs` options, see `Surface.Formatter.Plugin`.
+
+### Usage
+
+```bash
+$ mix format
+```
+
+(Formats both Elixir and Surface code.)
+
+## Mix Task Usage (Elixir 1.12 and earlier)
+
+### Configuration
+
+Add `surface_inputs` to `.formatter.exs` with patterns for all Surface files:
+
+```elixir
+# .formatter.exs
+[
+  ...,
+  # match all .sface files and all .ex files with ~F sigils
+  surface_inputs: ["lib/**/*.{ex,sface}", ...]
+]
+```
+
+If your project does not use `sface` files, you can omit `:surface_inputs` and
+specify file patterns in the standard `:inputs` field instead. (`mix
+surface.format` will fall back to `:inputs`.) But be warned that including
+`.sface` files in `:inputs` causes `mix format` to crash in Elixir 1.12 and
+earlier.
+
+For documentation of other `.formatter.exs` options, see `mix surface.format`.
+
+### Usage
 
 ```bash
 $ mix surface.format
 ```
-
-See `mix surface.format` for documentation of flags and configuration options.
 
 ## Formatting rules
 
@@ -92,23 +142,4 @@ will be formatted like this:
     Default slot contents
   </Child>
 </RootComponent>
-```
-
-## Formatting `.sface` files
-
-If your project includes `.sface` files, use the `:surface_inputs` option (instead of `:inputs`) in
-`.formatter.exs` to specify patterns for files containing Surface code.
-
-Without `:surface_inputs`, the formatter falls back to `:inputs`.
-Including `.sface` files in `:inputs` causes `mix format` to crash.
-
-```elixir
-# Example .formatter.exs preventing `mix format` from crashing on .sface files
-[
-  surface_line_length: 120,
-  import_deps: [:ecto, :phoenix, :surface],
-  inputs: ["*.{ex,exs}", "priv/*/seeds.exs", "{config,lib,test}/**/*.{ex,exs}"],
-  surface_inputs: ["{lib,test}/**/*.{ex,sface}"],
-  subdirectories: ["priv/*/migrations"]
-]
 ```
