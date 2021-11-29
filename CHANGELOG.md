@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.1 (2021-11-29)
+
+  * Stop adding spaces to indent blank lines in expressions (#51)
+
 ## v0.7.0 (2021-11-22)
 
   * Add `Surface.Formatter.Plugin` for Elixir 1.13 Formatter Plugin support.
