@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.2 (2021-12-03)
+
+  * Fix crash with Elixir expression `{...}` on Elixir 1.13 without `:line_length` or `:surface_line_length` (#53)
+
 ## v0.7.1 (2021-11-29)
 
   * Stop adding spaces to indent blank lines in expressions (#51)
