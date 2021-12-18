@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.3 (2021-12-18)
+
+  * Stop endlessly indenting strings with newlines in expression attributes (#54)
+
 ## v0.7.2 (2021-12-03)
 
   * Fix crash with Elixir expression `{...}` on Elixir 1.13 without `:line_length` or `:surface_line_length` (#53)
