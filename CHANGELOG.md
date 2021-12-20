@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.4 (2021-12-20)
+
+  * Handle arbitrary expressions when checking for newlines in strings
+
 ## v0.7.3 (2021-12-18)
 
   * Stop endlessly indenting strings with newlines in expression attributes (#54)

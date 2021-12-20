@@ -2,7 +2,7 @@ defmodule SurfaceFormatter.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/surface-ui/surface_formatter"
-  @version "0.7.3"
+  @version "0.7.4"
 
   def project do
     [
