@@ -57,6 +57,10 @@ defmodule Surface.FormatterTest do
       """)
     end
 
+    test "trailing whitespace is trimmed on single line inputs" do
+      assert_formatter_outputs(~s{<div/>    }, ~s{<div />})
+    end
+
     test "Contents of macro components are preserved" do
       assert_formatter_doesnt_change("""
       <#MacroComponent>

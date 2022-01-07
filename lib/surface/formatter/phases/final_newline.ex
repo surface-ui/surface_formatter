@@ -9,7 +9,7 @@ defmodule Surface.Formatter.Phases.FinalNewline do
   def run(nodes, opts) do
     suffix =
       opts
-      |> Keyword.get(:trailing_newline_on_input, false)
+      |> Keyword.get(:trailing_newline, false)
       |> final_newline()
 
     nodes ++ suffix
