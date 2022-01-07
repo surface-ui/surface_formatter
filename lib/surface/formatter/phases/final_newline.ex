@@ -7,14 +7,10 @@ defmodule Surface.Formatter.Phases.FinalNewline do
   def run([:indent], _opts), do: []
 
   def run(nodes, opts) do
-    suffix =
-      opts
-      |> Keyword.get(:trailing_newline, false)
-      |> final_newline()
-
-    nodes ++ suffix
+    if Keyword.get(opts, :trailing_newline, false) do
+      nodes ++ [:newline]
+    else
+      nodes
+    end
   end
-
-  defp final_newline(true), do: [:newline]
-  defp final_newline(_), do: []
 end
