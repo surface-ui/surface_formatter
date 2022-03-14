@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.5 (2022-03-14)
+
+  * Keep single-line and empty ~F sigils intact (#57)
+  * Prevent extra indentation on strings with newlines inside expressions (#61)
+
 ## v0.7.4 (2021-12-20)
 
   * Handle arbitrary expressions when checking for newlines in strings
