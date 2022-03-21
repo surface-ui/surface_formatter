@@ -55,7 +55,7 @@ defmodule SurfaceFormatter.MixProject do
     %{
       licenses: ["MIT"],
       links: %{
-        Changelog: @source_url <> "/blob/master/CHANGELOG.md",
+        Changelog: @source_url <> "/blob/main/CHANGELOG.md",
         GitHub: @source_url
       }
     }
