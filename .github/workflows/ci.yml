@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, misc ]
   pull_request:
     branches: [ main ]
 
@@ -49,8 +49,9 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
           mix deps.get --only test
-      - run: mix compile --warnings-as-errors
-        if: matrix.warnings_as_errors
+      - name: Compile Dependencies
+        run: mix deps.compile
+      - run: mix compile --warnings-as-errors=${{matrix.warnings_as_errors || false}}
       - run: mix test
         if: matrix.run_plugin_tests
       - run: mix test --exclude plugin
