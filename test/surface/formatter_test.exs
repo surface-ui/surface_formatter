@@ -1000,6 +1000,12 @@ defmodule Surface.FormatterTest do
       )
     end
 
+    test ":hook directive without any attribute" do
+      assert_formatter_doesnt_change("""
+      <div :hook />
+      """)
+    end
+
     test "true boolean attribute in directive" do
       assert_formatter_doesnt_change("""
       <div :if={true} />
